@@ -6,7 +6,7 @@ Players can register characters, fight monsters, gain EXP, level up, die, and re
 
 # Deployed on Sepolia Devnet
 
-Check ou the contract deployed on etherscan: https://sepolia.etherscan.io/address/0xecb298f067823ad31414718f63aafe436943232c
+Check ou the contract deployed on etherscan: https://sepolia.etherscan.io/address/0x7e68ef63ea7fd44691402002bfd3e28e420cf6f1
 
 ---
 
@@ -240,6 +240,6 @@ MIT License
 
 # 👨‍💻 Author
 
-beelzebruno
+beelzebruno - 2026
 
 Built as a blockchain and Solidity learning project.

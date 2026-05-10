@@ -52,7 +52,7 @@ contract SimpleBattleRPG {
         enemies[4] = Enemy(4, "Zombie", 250, 25, 15, 0, true, 125);
         enemies[5] = Enemy(5, "Werewolf", 300, 30, 20, 0, true, 150);
         enemies[6] = Enemy(6, "Dark Elf", 250, 20, 25, 40, true, 150);
-        enemies[7] = Enemy(3, "Dragon", 800, 80, 55, 80, true, 20);
+        enemies[7] = Enemy(7, "Dragon", 800, 80, 55, 80, true, 300);
 
         // Init classes
         classes[1] = "Warrior";
