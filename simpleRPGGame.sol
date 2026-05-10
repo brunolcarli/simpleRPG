@@ -236,6 +236,7 @@ contract SimpleBattleRPG {
         // require payment to revive a player 
         require(msg.value >= revivePrice, "Minimium value to revive not reached!");
         players[_player].currentHp = players[_player].maxHp;
+        players[_player].isAlive = true;
     }
 
 }

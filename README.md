@@ -6,7 +6,7 @@ Players can register characters, fight monsters, gain EXP, level up, die, and re
 
 # Deployed on Sepolia Devnet
 
-Check ou the contract deployed on etherscan: https://sepolia.etherscan.io/address/0xe067b874b594146ecdbf34cc1eea7b5277e94b65
+Check ou the contract deployed on etherscan: https://sepolia.etherscan.io/address/0xecb298f067823ad31414718f63aafe436943232c
 
 ---
 
