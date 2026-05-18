@@ -1,26 +1,53 @@
 # ⚔️ Simple Battle RPG - Solidity Smart Contract
 
-A simple on-chain RPG battle game built with Solidity and Ethereum smart contracts.
+An on-chain medieval fantasy RPG battle system built with Solidity and Ethereum smart contracts.
 
-Players can register characters, fight monsters, gain EXP, level up, die, and revive using ETH-based mechanics.
+Players can create heroes, battle monsters, challenge other players, gain EXP, level up, earn ETH loot, heal, revive, and fight entirely on-chain using Ethereum transactions.
 
-# Deployed on Sepolia Devnet
+---
 
-Check ou the contract deployed on etherscan: https://sepolia.etherscan.io/address/0x7e68ef63ea7fd44691402002bfd3e28e420cf6f1
+# 🌐 Live Frontend
+
+DApp frontend:
+
+https://ethereum-simple-rpg-game.vercel.app/
+
+---
+
+# 📜 Smart Contract
+
+## Sepolia Contract Address
+
+```txt
+0x494f4a2c19415b74a70cd8dd6927c309ccfb6723
+```
+
+## Etherscan
+
+https://sepolia.etherscan.io/address/0x494f4a2c19415b74a70cd8dd6927c309ccfb6723
+
+## Frontend Repository
+
+https://github.com/brunolcarli/EthereumSimpleRpgGame
 
 ---
 
 # 🚀 Features
 
 - 🧙 Multiple character classes
-- ⚔️ Turn-based battle system
-- 👾 Multiple enemies
+- ⚔️ On-chain PvE battles
+- 🛡️ On-chain PvP battles
+- 👾 Multiple enemies with unique stats
 - 📈 EXP and level-up system
 - ❤️ HP / Damage mechanics
-- 💰 ETH-based battle costs
 - ☠️ Death and revive mechanics
-- 🎲 Pseudo-random combat system
-- 📜 Solidity event combat logs
+- 🧪 Heal system
+- 💰 ETH-based gameplay economy
+- 🎲 Critical hit system
+- 🎁 Random ETH loot drops
+- 📜 Solidity combat event logs
+- 🔥 Dynamic battle pricing
+- 🏹 Magic vs physical combat systems
 
 ---
 
@@ -38,31 +65,115 @@ Check ou the contract deployed on etherscan: https://sepolia.etherscan.io/addres
 
 | Class | Description |
 |---|---|
-| Warrior | High HP and defense |
-| Mage | High magic damage |
-| Ranger | Balanced physical fighter |
+| 🗡️ Warrior | High HP and defense |
+| 🧙 Mage | High magic damage |
+| 🏹 Ranger | Balanced fighter |
 
 ---
 
-## Enemies
+# 👾 Enemies
 
-The game includes several enemies:
+The game currently includes 10 enemies:
 
-- Goblin
-- Orc
-- Skeleton
-- Zombie
-- Werewolf
-- Dark Elf
-- Dragon
+| Enemy | Description |
+|---|---|
+| 👺 Goblin | Weak beginner enemy |
+| 🪓 Orc | Strong melee fighter |
+| 💀 Skeleton | Balanced undead |
+| 🧟 Zombie | High HP tank |
+| 🐺 Werewolf | Fast attacker |
+| 🧝 Dark Elf | Magic attacker |
+| 🦎 Great Lizard | Agile reptile creature |
+| 🪨 Troll | Massive brute |
+| 🧚 Dark Fairy | Powerful magic enemy |
+| 🐉 Dragon | Endgame boss |
 
-Each enemy has unique stats such as:
+Each enemy has:
 
 - HP
 - Attack
 - Defense
 - Magic
 - EXP reward
+- ETH reward drop chance
+
+---
+
+# ⚔️ Battle Systems
+
+## PvE Battles
+
+Players can fight monsters using:
+
+```solidity
+battle(enemyId, rounds)
+```
+
+Combat is fully processed on-chain.
+
+Features include:
+
+- Critical hits
+- Damage calculations
+- Random ETH rewards
+- EXP rewards
+- Level-up logic
+- Death system
+
+---
+
+## PvP Battles
+
+Players can challenge real players:
+
+```solidity
+challengePlayer(targetPlayer, rounds)
+```
+
+Features include:
+
+- Player vs player combat
+- Critical hits
+- EXP rewards
+- Permanent death until revived
+- Class-based combat calculations
+
+---
+
+# 📈 Level System
+
+Players gain EXP after victories.
+
+When EXP exceeds the required threshold:
+
+- Level increases
+- Max HP increases
+- Stats increase
+- HP is restored
+
+Each class receives unique stat bonuses on level-up.
+
+---
+
+# ❤️ Healing & Revive
+
+## Heal
+
+Restore a living player's HP:
+
+```solidity
+heal(playerAddress)
+```
+
+---
+
+## Revive
+
+Revive dead players:
+
+```solidity
+revive(playerAddress)
+```
 
 ---
 
@@ -70,20 +181,35 @@ Each enemy has unique stats such as:
 
 ## Registration Fee
 
-Players must pay a registration fee to create a character.
-
 ```solidity
 registerPrice = 0.0001 ether
 ```
 
 ---
 
-## Battle Cost
+## Common Action Cost
 
-Battles cost ETH depending on the number of rounds selected.
+The following actions use:
 
 ```solidity
-battlePrice = pricePerRound * battleRounds
+commonPrice = 0.001 ether
+```
+
+Used for:
+
+- Battles
+- PvP
+- Heal
+- Revive
+
+---
+
+## Dynamic Battle Cost
+
+Battle costs scale with rounds:
+
+```solidity
+battleCost = commonPrice * rounds
 ```
 
 Example:
@@ -96,45 +222,21 @@ Example:
 
 ---
 
-## Revive Cost
+# 🎁 ETH Loot Drops
 
-Dead players can revive by paying:
+Enemies can randomly drop ETH after defeat.
+
+Example:
 
 ```solidity
-revivePrice = 0.001 ether
+emit battleLog(round, "Enemy dropped ether", enemy.gold);
 ```
 
----
-
-# ⚔️ Battle System
-
-During battle:
-
-1. Player attacks enemy
-2. Enemy attacks player
-3. Damage is calculated
-4. HP is reduced
-5. Combat logs are emitted
-6. Battle ends if:
-   - Enemy dies
-   - Player dies
-   - Max rounds reached
+Stronger enemies drop larger ETH rewards.
 
 ---
 
-# 📈 Level System
-
-Players gain EXP after defeating enemies.
-
-When EXP reaches the required threshold:
-
-- Player levels up
-- Stats increase
-- HP is restored
-
----
-
-# 🎲 Randomness
+# 🎲 Randomness System
 
 The game uses pseudo-randomness based on:
 
@@ -143,92 +245,146 @@ The game uses pseudo-randomness based on:
 - `msg.sender`
 - `block.number`
 
+Used for:
+
+- Damage variance
+- Critical hits
+- ETH reward drops
+
+---
+
+# 🔥 Critical Hits
+
+Players and enemies can land critical strikes.
+
+Critical attacks deal:
+
+```solidity
+damage * 2
+```
+
+Combat logs display critical attacks in real time.
+
+---
+
+# 📜 Solidity Events
+
+Combat actions emit Solidity events:
+
+```solidity
+event battleLog(uint8 round, string message, uint value);
+```
+
+Examples:
+
+- Damage dealt
+- Critical damage
+- Level up
+- Player death
+- Monster defeat
+- ETH drops
+
+---
+
+# 🧪 Example Gameplay Flow
+
+1. Connect wallet
+2. Register hero
+3. Battle enemies
+4. Gain EXP
+5. Level up
+6. Earn ETH loot
+7. Challenge players
+8. Heal or revive if needed
+9. Defeat stronger enemies
+
+---
+
+# 📦 Smart Contract Functions
+
+## Player Functions
+
+- `registerPlayer()`
+- `battle()`
+- `challengePlayer()`
+- `heal()`
+- `revive()`
+
+---
+
+## Combat Functions
+
+- `calcDamageForPlayer()`
+- `calcDamageForEnemy()`
+- `calcDamageForPlayerVsPlayer()`
+
+---
+
+## Utility Functions
+
+- `randomNumber()`
+- `expUp()`
+- `getLvUpBonus()`
+
+---
+
+# 👑 Owner Functions
+
+## Withdraw Contract Balance
+
+```solidity
+withdraw()
+```
+
+Protected with:
+
+```solidity
+onlyOwner
+```
+
+---
+
+# 🔮 Future Improvements
+
+- 🖼️ NFT characters
+- 🪙 ERC20 in-game currency
+- 🎒 Inventory system
+- 🗡️ Equipment system
+- 🛒 Marketplace
+- 🐲 Raid bosses
+- 🌎 Multiplayer world
+- ⚡ Guild system
+- 🎵 Sound effects
+- 🧠 Chainlink VRF integration
+- 🏰 Persistent world state
+- 📱 Mobile optimization
+
 ---
 
 # ⚠️ Disclaimer
 
 This project was created for educational and portfolio purposes.
 
-The random number generation used in this contract is NOT secure for production-grade blockchain games.
+The randomness system used in this smart contract is pseudo-random and is NOT secure for production-grade blockchain games.
 
-For production environments, a verifiable randomness source such as Chainlink VRF should be used.
-
----
-
-# 📜 Events
-
-Combat logs are emitted using Solidity events:
-
-```solidity
-event battleLog(uint8 round, string message, uint value);
-```
-
-Example logs:
-
-- Player damage
-- Enemy damage
-- Level up
-- Death
-- Victory
-
----
-
-# 🧪 Example Flow
-
-1. Deploy contract
-2. Register character
-3. Start battle
-4. Earn EXP
-5. Level up
-6. Fight stronger enemies
-7. Revive if dead
-
----
-
-# 📦 Contract Functions
-
-## Player Functions
-
-- `registerPlayer()`
-- `battle()`
-- `revive()`
-
-## Utility Functions
-
-- `randomNumber()`
-- `calcDamageForPlayer()`
-- `calcDamageForEnemy()`
-- `expUp()`
-
----
-
-# 🔮 Future Improvements
-
-- NFT characters
-- ERC20 in-game currency
-- Persistent enemy states
-- PvP battles
-- Inventory system
-- Equipment system
-- Loot drops
-- Frontend with React + ethers.js
-- Chainlink VRF integration
-- Multiplayer mechanics
+For production environments, verifiable randomness such as Chainlink VRF should be used.
 
 ---
 
 # 📚 Learning Goals
 
-This project was created to study:
+This project explores:
 
 - Solidity
 - Smart contracts
-- Ethereum game logic
+- Ethereum game architecture
 - EVM mechanics
 - Payable functions
-- Events
-- State management
-- Blockchain game architecture
+- Event systems
+- On-chain state management
+- PvP mechanics
+- Blockchain game design
+- Web3 game development
 
 ---
 
@@ -240,6 +396,6 @@ MIT License
 
 # 👨‍💻 Author
 
-beelzebruno - 2026
+beelzebruno — 2026
 
 Built as a blockchain and Solidity learning project.
