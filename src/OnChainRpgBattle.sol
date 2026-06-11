@@ -22,12 +22,39 @@ contract OnChainRpgBattle {
     /////////////////////////////
     error NotOwner();
 
+
+    //////////////////////////////
+    // EVENTS
+    /////////////////////////////
+    event battleLog(uint8 round, string message, uint value);
+    event GuildCreated(uint256 indexed guildId, string name, address indexed leader);
+    event GuildJoined(uint256 indexed guildId, address indexed player);
+    event GuildLeft(uint256 indexed guildId, address indexed player);
+    event GuildPointsChanged(uint256 indexed winnerGuildId, uint256 indexed loserGuildId, uint256 winnerPoints, uint256 loserPoints);
+
+    //////////////////////////////
+    // MODIFIERS
+    /////////////////////////////
+    modifier requirePayment() {
+        require(msg.value >= COMMON_PRICE, "Minimium payment required!");
+        _;
+    }
+
+    modifier onlyOwner() {
+        // require(msg.sender == i_owner, "Sender is not the owner");
+        
+        // this upsaves a lot of gas than requeire does
+        if (msg.sender != i_owner) { revert NotOwner();}
+        _;
+    }
+
     //////////////////////////////
     // CONSTANTS
     /////////////////////////////
-    // Prices
+
     uint256 public constant REGISTER_PRICE = 0.0001 ether;  // registering in game is cheaper ;)
     uint256 public constant COMMON_PRICE = 0.001 ether;  // battle round, revive, heal
+    uint256 public constant CREATE_GUILD_PRICE = 0.01 ether;
 
     //////////////////////////////
     // STATE VARIABLES
@@ -44,9 +71,28 @@ contract OnChainRpgBattle {
     // player classes mapping
     mapping(uint8 => string) public classes;
 
+    // Guild mappings
+    mapping(uint256 => Guild) public guilds;
+    mapping(address => uint256) public playerGuild;
+    mapping(bytes32 => uint256) public guildIdByNameHash;
+
+    uint256[] public guildIds;
+    uint256[5] public topGuilds;
+
+    uint256 public nextGuildId = 1;
+
     //////////////////////////////
     // Structs
     /////////////////////////////
+
+    struct Guild {
+        uint256 id;
+        string name;
+        address guildOwner;
+        uint256 membersCount;
+        uint256 points;
+        bool exists;
+    }
 
     // Player attributes
     struct Player {
@@ -244,7 +290,6 @@ contract OnChainRpgBattle {
         return baseDamage * 2;
     }
 
-    event battleLog(uint8 round, string message, uint value);
 
     // Returns true if the player crits
     function playerCrit() public view returns(bool) {
@@ -410,8 +455,11 @@ contract OnChainRpgBattle {
 
             // exp up for attacker only
             if (players[_targetPlayer].currentHp == 0) {
+
                 bool lvUp = expUp(players[msg.sender].lv * 4 * players[_targetPlayer].lv * 3);
                 players[_targetPlayer].isAlive = false;
+
+                _awardGuildPoints(msg.sender, _targetPlayer);
 
                 if (lvUp == true) {
                     players[msg.sender].currentHp = players[msg.sender].maxHp;
@@ -425,6 +473,8 @@ contract OnChainRpgBattle {
                 uint256 _exp = players[_targetPlayer].lv * 4 * players[msg.sender].lv * 3;
                 bool lvUp = expUp(_exp);
                 players[msg.sender].isAlive = false;
+
+                _awardGuildPoints(_targetPlayer, msg.sender);
 
                 players[_targetPlayer].exp += _exp;
                 if (players[_targetPlayer].exp >= players[_targetPlayer].nextLv) {
@@ -466,12 +516,6 @@ contract OnChainRpgBattle {
         players[_player].currentHp = players[_player].maxHp;
     }
 
-    // reusable require payment modifier
-    modifier requirePayment() {
-        require(msg.value >= COMMON_PRICE, "Minimium payment required!");
-        _;
-    }
-
 
     ////////////////////////////////////////////
     // OWNER PRIVILEGES
@@ -481,12 +525,196 @@ contract OnChainRpgBattle {
         require(callSuccess, "Call Failed");
     }
 
-    modifier onlyOwner() {
-        // require(msg.sender == i_owner, "Sender is not the owner");
-        
-        // this upsaves a lot of gas than requeire does
-        if (msg.sender != i_owner) { revert NotOwner();}
-        _;
+
+    //////////////////////////////
+    // GUILD FUNCTIONS
+    /////////////////////////////
+
+    function createGuild(string memory _name) public payable {
+        require(msg.value >= CREATE_GUILD_PRICE, "Minimum payment required to create guild");
+        require(players[msg.sender].isAlive == true, "Only registered alive players can create guilds");
+        require(playerGuild[msg.sender] == 0, "Player already belongs to a guild");
+
+        bytes32 guildNameHash = keccak256(abi.encodePacked(_name));
+        require(guildIdByNameHash[guildNameHash] == 0, "Guild name already exists");
+
+        uint256 guildId = nextGuildId;
+
+        guilds[guildId] = Guild({
+            id: guildId,
+            name: _name,
+            guildOwner: msg.sender,
+            membersCount: 1,
+            points: 0,
+            exists: true
+        });
+
+        guildIdByNameHash[guildNameHash] = guildId;
+        playerGuild[msg.sender] = guildId;
+        guildIds.push(guildId);
+        nextGuildId++;
+
+        emit GuildCreated(guildId, _name, msg.sender);
+    }
+
+    function joinGuild(uint256 _guildId) public {
+        require(players[msg.sender].isAlive == true, "Only registered alive players can join guilds");
+        require(guilds[_guildId].exists == true, "Guild does not exist");
+        require(playerGuild[msg.sender] == 0, "Player already belongs to a guild");
+
+        playerGuild[msg.sender] = _guildId;
+        guilds[_guildId].membersCount++;
+
+        emit GuildJoined(_guildId, msg.sender);
+    }
+
+    function leaveGuild() public {
+        uint256 guildId = playerGuild[msg.sender];
+
+        require(guildId != 0, "Player does not belong to a guild");
+        require(msg.sender != guilds[guildId].guildOwner, "Guild owner cannot leave guild");
+
+        playerGuild[msg.sender] = 0;
+        guilds[guildId].membersCount--;
+
+        emit GuildLeft(guildId, msg.sender);
+    }
+
+    function getGuilds(uint256 _offset, uint256 _limit) public view returns (Guild[] memory) {
+        uint256 totalGuilds = guildIds.length;
+
+        if (_offset >= totalGuilds) {
+            return new Guild[](0);
+        }
+
+        uint256 end = _offset + _limit;
+
+        if (end > totalGuilds) {
+            end = totalGuilds;
+        }
+
+        Guild[] memory result = new Guild[](end - _offset);
+
+        for (uint256 i = _offset; i < end; i++) {
+            result[i - _offset] = guilds[guildIds[i]];
+        }
+
+        return result;
+    }
+
+    function getTopGuilds() public view returns (Guild[5] memory) {
+        Guild[5] memory result;
+
+        for (uint256 i = 0; i < 5; i++) {
+            if (topGuilds[i] != 0) {
+                result[i] = guilds[topGuilds[i]];
+            }
+        }
+
+        return result;
+    }
+
+    function addGuildMember(uint256 _guildId, address _player) public {
+        require(guilds[_guildId].exists == true, "Guild does not exist");
+        require(msg.sender == guilds[_guildId].guildOwner, "Only guild owner can add members");
+        require(players[_player].isAlive == true, "Player is not registered or alive");
+        require(playerGuild[_player] == 0, "Player already belongs to a guild");
+
+        playerGuild[_player] = _guildId;
+        guilds[_guildId].membersCount++;
+
+        emit GuildJoined(_guildId, _player);
+    }
+
+    function removeGuildMember(uint256 _guildId, address _player) public {
+        require(guilds[_guildId].exists == true, "Guild does not exist");
+        require(msg.sender == guilds[_guildId].guildOwner, "Only guild owner can remove members");
+        require(playerGuild[_player] == _guildId, "Player does not belong to this guild");
+        require(_player != guilds[_guildId].guildOwner, "Guild owner cannot be removed");
+
+        playerGuild[_player] = 0;
+        guilds[_guildId].membersCount--;
+
+        emit GuildLeft(_guildId, _player);
+    }
+
+    function _updateTopGuilds(uint256 _guildId) internal {
+        if (_guildId == 0 || guilds[_guildId].exists == false) {
+            return;
+        }
+
+        bool alreadyInTop = false;
+
+        for (uint256 i = 0; i < 5; i++) {
+            if (topGuilds[i] == _guildId) {
+                alreadyInTop = true;
+                break;
+            }
+        }
+
+        if (!alreadyInTop) {
+            for (uint256 i = 0; i < 5; i++) {
+                if (topGuilds[i] == 0) {
+                    topGuilds[i] = _guildId;
+                    alreadyInTop = true;
+                    break;
+                }
+            }
+        }
+
+        if (!alreadyInTop) {
+            uint256 lastGuildId = topGuilds[4];
+
+            if (guilds[_guildId].points <= guilds[lastGuildId].points) {
+                return;
+            }
+
+            topGuilds[4] = _guildId;
+        }
+
+        for (uint256 i = 0; i < 5; i++) {
+            for (uint256 j = i + 1; j < 5; j++) {
+                if (
+                    topGuilds[j] != 0 &&
+                    guilds[topGuilds[j]].points > guilds[topGuilds[i]].points
+                ) {
+                    uint256 temp = topGuilds[i];
+                    topGuilds[i] = topGuilds[j];
+                    topGuilds[j] = temp;
+                }
+            }
+        }
+    }
+
+    function _awardGuildPoints(address _winner, address _loser) internal {
+        uint256 winnerGuildId = playerGuild[_winner];
+        uint256 loserGuildId = playerGuild[_loser];
+
+        if (winnerGuildId == 0 || loserGuildId == 0) {
+            return;
+        }
+
+        if (winnerGuildId == loserGuildId) {
+            return;
+        }
+
+        guilds[winnerGuildId].points += 10;
+
+        if (guilds[loserGuildId].points >= 5) {
+            guilds[loserGuildId].points -= 5;
+        } else {
+            guilds[loserGuildId].points = 0;
+        }
+
+        _updateTopGuilds(winnerGuildId);
+        _updateTopGuilds(loserGuildId);
+
+        emit GuildPointsChanged(
+            winnerGuildId,
+            loserGuildId,
+            guilds[winnerGuildId].points,
+            guilds[loserGuildId].points
+        );
     }
 
 }
