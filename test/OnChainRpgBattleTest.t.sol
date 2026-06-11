@@ -330,6 +330,131 @@ contract OnChainRpgBattleTest is Test {
     }
 
     //////////////////////////////
+    // Branch Coverage
+    //////////////////////////////
+
+    function testPlayerCritCanReturnTrue() public {
+        _setRandomAtLeast(PLAYER, 7);
+
+        vm.prank(PLAYER);
+        bool crit = rpg.playerCrit();
+
+        assertTrue(crit);
+    }
+
+    function testPlayerCritCanReturnFalse() public {
+        _setRandomAtMost(PLAYER, 6);
+
+        vm.prank(PLAYER);
+        bool crit = rpg.playerCrit();
+
+        assertFalse(crit);
+    }
+
+    function testEnemyCritCanReturnTrue() public {
+        _setRandomAtLeast(PLAYER, 10);
+
+        vm.prank(PLAYER);
+        bool crit = rpg.enemyCrit();
+
+        assertTrue(crit);
+    }
+
+    function testEnemyCritCanReturnFalse() public {
+        _setRandomAtMost(PLAYER, 9);
+
+        vm.prank(PLAYER);
+        bool crit = rpg.enemyCrit();
+
+        assertFalse(crit);
+    }
+
+    function testMageUsesMagicToCalculateDamageAgainstEnemy() public {
+        _registerPlayer(PLAYER, "Merlin", 2);
+        _setRandomAtLeast(PLAYER, 5);
+
+        vm.prank(PLAYER);
+        uint256 damage = rpg.calcDamageForPlayer(PLAYER, 1);
+
+        assertGt(damage, 2);
+    }
+
+    function testWarriorCanDealOnlyBaseLevelDamageAgainstHighDefenseEnemy() public {
+        _registerPlayer(PLAYER, "Bruno", 1);
+        _setRandomAtMost(PLAYER, 1);
+
+        vm.prank(PLAYER);
+        uint256 damage = rpg.calcDamageForPlayer(PLAYER, 8); // Troll has high def
+
+        assertEq(damage, 2);
+    }
+
+    function testMageUsesMagicToCalculateDamageAgainstAnotherPlayer() public {
+        _registerPlayer(PLAYER, "Merlin", 2);
+        _registerPlayer(PLAYER_TWO, "Target", 1);
+
+        _setRandomAtLeast(PLAYER, 5);
+
+        vm.prank(PLAYER);
+        uint256 damage = rpg.calcDamageForPlayerVsPlayer(PLAYER, PLAYER_TWO);
+
+        assertGt(damage, 2);
+    }
+
+    function testWarriorUsesAttackAgainstAnotherPlayerDefense() public {
+        _registerPlayer(PLAYER, "Bruno", 1);
+        _registerPlayer(PLAYER_TWO, "Merlin", 2);
+
+        _setRandomAtMost(PLAYER, 1);
+
+        vm.prank(PLAYER);
+        uint256 damage = rpg.calcDamageForPlayerVsPlayer(PLAYER, PLAYER_TWO);
+
+        assertGt(damage, 2);
+    }
+
+    function testPlayerDefeatsGoblinAndLevelsUp() public {
+        _registerPlayer(PLAYER, "Merlin", 2);
+
+        _setRandomAtLeast(PLAYER, 10);
+
+        vm.prank(PLAYER);
+        rpg.battle{value: COMMON_PRICE * 5}(1, 5);
+
+        assertGt(_getLevel(PLAYER), 1);
+        assertEq(_getCurrentHp(PLAYER), _getMaxHp(PLAYER));
+        assertTrue(_getIsAlive(PLAYER));
+    }
+
+    function testPlayerCanReceiveEtherDropAfterDefeatingEnemy() public {
+        _registerPlayer(PLAYER, "Merlin", 2);
+
+        uint256 battlePrice = COMMON_PRICE * 5;
+        uint256 expectedDrop = 0.0001 ether;
+
+        _setRandomAtLeast(PLAYER, 10);
+
+        vm.prank(PLAYER);
+        rpg.battle{value: battlePrice}(1, 5);
+
+        assertEq(address(rpg).balance, REGISTER_PRICE + battlePrice - expectedDrop);
+    }
+
+    function testChallengePlayerCanKillTargetPlayer() public {
+        _registerPlayer(PLAYER, "Merlin", 2);
+        _registerPlayer(PLAYER_TWO, "Target", 3);
+
+        _setRandomAtLeast(PLAYER, 10);
+
+        vm.prank(PLAYER);
+        rpg.challengePlayer{value: COMMON_PRICE * 10}(PLAYER_TWO, 10);
+
+        assertFalse(_getIsAlive(PLAYER_TWO));
+        assertEq(_getCurrentHp(PLAYER_TWO), 0);
+    }
+
+
+    //////////////////////////////
     // Helpers
     //////////////////////////////
 
@@ -384,6 +509,38 @@ contract OnChainRpgBattleTest is Test {
 
     function _getIsAlive(address player) internal view returns (bool isAlive) {
         (,,,,,,,,,,, isAlive) = rpg.players(player);
+    }
+
+    function _setRandomAtLeast(address caller, uint256 minValue) internal {
+        for (uint256 i = 1; i < 10_000; i++) {
+            vm.warp(1_000 + i);
+            vm.roll(2_000 + i);
+
+            vm.prank(caller);
+            uint256 random = rpg.randomNumber();
+
+            if (random >= minValue) {
+                return;
+            }
+        }
+
+        revert("Could not set random at least value");
+    }
+
+    function _setRandomAtMost(address caller, uint256 maxValue) internal {
+        for (uint256 i = 1; i < 10_000; i++) {
+            vm.warp(10_000 + i);
+            vm.roll(20_000 + i);
+
+            vm.prank(caller);
+            uint256 random = rpg.randomNumber();
+
+            if (random <= maxValue) {
+                return;
+            }
+        }
+
+        revert("Could not set random at most value");
     }
 
     receive() external payable {}
