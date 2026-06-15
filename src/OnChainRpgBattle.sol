@@ -13,9 +13,11 @@ pragma solidity ^0.8.18;
 //
 //////////////////////////////////////////////////////
 
+import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 
-contract OnChainRpgBattle {
+contract OnChainRpgBattle is ERC721 {
 
     //////////////////////////////
     // ERRORS
@@ -26,11 +28,18 @@ contract OnChainRpgBattle {
     //////////////////////////////
     // EVENTS
     /////////////////////////////
-    event battleLog(uint8 round, string message, uint value);
+    event battleLog(uint256 round, string message, uint value);
     event GuildCreated(uint256 indexed guildId, string name, address indexed leader);
     event GuildJoined(uint256 indexed guildId, address indexed player);
     event GuildLeft(uint256 indexed guildId, address indexed player);
     event GuildPointsChanged(uint256 indexed winnerGuildId, uint256 indexed loserGuildId, uint256 winnerPoints, uint256 loserPoints);
+    event MonsterSlayed(address indexed player, uint8 indexed enemyId, uint256 totalSlayed);
+    event PlayerSlayed(address indexed winner, address indexed loser, uint256 totalSlayed);
+    event AchievementClaimed(
+        address indexed player,
+        uint256 indexed achievementId,
+        uint256 indexed tokenId
+    );
 
     //////////////////////////////
     // MODIFIERS
@@ -55,6 +64,8 @@ contract OnChainRpgBattle {
     uint256 public constant REGISTER_PRICE = 0.0001 ether;  // registering in game is cheaper ;)
     uint256 public constant COMMON_PRICE = 0.001 ether;  // battle round, revive, heal
     uint256 public constant CREATE_GUILD_PRICE = 0.01 ether;
+    uint256 public constant PLAYER_SLAYER = 100;
+    uint256 public constant PLAYER_SLAYER_REQUIRED_KILLS = 100;
 
     //////////////////////////////
     // STATE VARIABLES
@@ -71,15 +82,23 @@ contract OnChainRpgBattle {
     // player classes mapping
     mapping(uint8 => string) public classes;
 
-    // Guild mappings
+    // Guild mappings and stuff
     mapping(uint256 => Guild) public guilds;
     mapping(address => uint256) public playerGuild;
     mapping(bytes32 => uint256) public guildIdByNameHash;
-
     uint256[] public guildIds;
     uint256[5] public topGuilds;
 
     uint256 public nextGuildId = 1;
+
+    // Achievements
+    string private s_baseTokenURI;
+    mapping(address => mapping(uint8 => uint256)) public monsterSlayeds;
+    mapping(address => uint256) public playerSlayeds;
+    mapping(address => mapping(uint256 => bool)) public hasAchievement;
+    mapping(uint256 => uint256) public tokenAchievement;
+    mapping(uint8 => uint256) public achievementRequirement;
+    uint256 public nextTokenId = 1;
 
     //////////////////////////////
     // Structs
@@ -124,7 +143,7 @@ contract OnChainRpgBattle {
     }
 
     
-    constructor() {
+    constructor() ERC721("OnChain RPG Achievements", "RPGACH") {
         // define contract ownership
         i_owner = msg.sender;
 
@@ -139,6 +158,19 @@ contract OnChainRpgBattle {
         enemies[8] = Enemy(8, "Troll", 1000, 120, 100, 45, true, 600, 0.008 ether);
         enemies[9] = Enemy(9, "Dark Fairy", 1200, 80, 150, 150, true, 750, 0.009 ether);
         enemies[10] = Enemy(10, "Dragon", 2200, 200, 200, 200, true, 860, 0.001 ether);
+
+        // init achiements rewards requirements
+        achievementRequirement[1] = 100; // Goblin
+        achievementRequirement[2] = 100; // Orc
+        achievementRequirement[3] = 100; // Skeleton
+        achievementRequirement[4] = 100; // Zombie
+        achievementRequirement[5] = 100; // Werewolf
+
+        achievementRequirement[6] = 75;  // Dark Elf
+        achievementRequirement[7] = 75;  // Great Lizard
+        achievementRequirement[8] = 50;  // Troll
+        achievementRequirement[9] = 25;   // Dark Fairy
+        achievementRequirement[10] = 20;  // Dragon
 
         // Init classes
         classes[1] = "Warrior";
@@ -333,7 +365,7 @@ contract OnChainRpgBattle {
         uint256 enemyDamage;
 
         // round battle logic for each round payed for battling
-        for (uint8 round = 0; round < _battleRounds; round++) {
+        for (uint256 round = 0; round < _battleRounds; round++) {
 
             // get enemy and player critical hit chance
             bool playerCrited = playerCrit();
@@ -371,6 +403,9 @@ contract OnChainRpgBattle {
             takeDamage(msg.sender, enemyDamage);
 
             if (enemy.hp == 0) {
+                monsterSlayeds[msg.sender][_enemyId]++;
+                emit MonsterSlayed(msg.sender, _enemyId, monsterSlayeds[msg.sender][_enemyId]);
+
                 bool lvUp = expUp(enemy.exp);
                 bool earnedMoney = randomNumber() > 6;
 
@@ -421,7 +456,7 @@ contract OnChainRpgBattle {
         uint256 enemyDamage;
 
         // round battle logic for each round payed for battling
-        for (uint8 round = 0; round < _battleRounds; round++) {
+        for (uint256 round = 0; round < _battleRounds; round++) {
 
             // get enemy and player critical hit chance
             bool attackerCrited = playerCrit();
@@ -455,6 +490,8 @@ contract OnChainRpgBattle {
 
             // exp up for attacker only
             if (players[_targetPlayer].currentHp == 0) {
+                playerSlayeds[msg.sender]++;
+                emit PlayerSlayed(msg.sender, _targetPlayer, playerSlayeds[msg.sender]);
 
                 bool lvUp = expUp(players[msg.sender].lv * 4 * players[_targetPlayer].lv * 3);
                 players[_targetPlayer].isAlive = false;
@@ -470,8 +507,12 @@ contract OnChainRpgBattle {
             }
 
             if (players[msg.sender].currentHp == 0) {
+                playerSlayeds[_targetPlayer]++;
+                emit PlayerSlayed(_targetPlayer, msg.sender, playerSlayeds[_targetPlayer]);
+
                 uint256 _exp = players[_targetPlayer].lv * 4 * players[msg.sender].lv * 3;
-                bool lvUp = expUp(_exp);
+                // bool lvUp = expUp(_exp);
+                bool lvUp = false;
                 players[msg.sender].isAlive = false;
 
                 _awardGuildPoints(_targetPlayer, msg.sender);
@@ -637,6 +678,62 @@ contract OnChainRpgBattle {
 
         emit GuildLeft(_guildId, _player);
     }
+
+
+    ////////////////////////////////////////////
+    // NFT Achievements
+    ///////////////////////////////////////////
+    function claimAchievement(uint256 _achievementId) public {
+        require(players[msg.sender].isAlive == true, "Only registered players can claim achievements");
+        require(hasAchievement[msg.sender][_achievementId] == false, "Achievement already claimed");
+
+        if (_achievementId >= 1 && _achievementId <= 10) {
+            // casting to uint8 is safe because achievementId is validated between 1 and 10
+            // forge-lint: disable-next-line(unsafe-typecast)
+            uint8 enemyId = uint8(_achievementId);
+
+            require(
+                monsterSlayeds[msg.sender][enemyId] >= achievementRequirement[enemyId],
+                "Not enough monsters slayed"
+            );
+        } else if (_achievementId == PLAYER_SLAYER) {
+            require(
+                playerSlayeds[msg.sender] >= PLAYER_SLAYER_REQUIRED_KILLS,
+                "Not enough players slayed"
+            );
+        } else {
+            revert("Invalid achievement");
+        }
+
+        hasAchievement[msg.sender][_achievementId] = true;
+
+        uint256 tokenId = nextTokenId;
+        nextTokenId++;
+
+        tokenAchievement[tokenId] = _achievementId;
+
+        _safeMint(msg.sender, tokenId);
+        emit AchievementClaimed(msg.sender, _achievementId, tokenId);
+    }
+
+    function tokenURI(uint256 tokenId) public view override returns (string memory) {
+        ownerOf(tokenId);
+
+        uint256 achievementId = tokenAchievement[tokenId];
+
+        return string(
+            abi.encodePacked(
+                s_baseTokenURI,
+                Strings.toString(achievementId),
+                ".json"
+            )
+        );
+    }
+
+
+    ////////////////////////////////////////////
+    // HELPERS
+    ///////////////////////////////////////////
 
     function _updateTopGuilds(uint256 _guildId) internal {
         if (_guildId == 0 || guilds[_guildId].exists == false) {
