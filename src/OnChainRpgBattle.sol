@@ -2,10 +2,10 @@
 pragma solidity ^0.8.18;
 
 //////////////////////////////////////////////////////
-// ______       _   _   _       ____________ _____ 
+// ______       _   _   _       ____________ _____
 // | ___ \     | | | | | |      | ___ \ ___ \  __ \
 // | |_/ / __ _| |_| |_| | ___  | |_/ / |_/ / |  \/
-// | ___ \/ _` | __| __| |/ _ \ |    /|  __/| | __ 
+// | ___ \/ _` | __| __| |/ _ \ |    /|  __/| | __
 // | |_/ / (_| | |_| |_| |  __/ | |\ \| |   | |_\ \
 // \____/ \__,_|\__|\__|_|\___| \_| \_\_|    \____/
 //
@@ -16,30 +16,25 @@ pragma solidity ^0.8.18;
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
-
 contract OnChainRpgBattle is ERC721 {
-
     //////////////////////////////
     // ERRORS
     /////////////////////////////
     error NotOwner();
 
-
     //////////////////////////////
     // EVENTS
     /////////////////////////////
-    event battleLog(uint256 round, string message, uint value);
+    event battleLog(uint256 round, string message, uint256 value);
     event GuildCreated(uint256 indexed guildId, string name, address indexed leader);
     event GuildJoined(uint256 indexed guildId, address indexed player);
     event GuildLeft(uint256 indexed guildId, address indexed player);
-    event GuildPointsChanged(uint256 indexed winnerGuildId, uint256 indexed loserGuildId, uint256 winnerPoints, uint256 loserPoints);
+    event GuildPointsChanged(
+        uint256 indexed winnerGuildId, uint256 indexed loserGuildId, uint256 winnerPoints, uint256 loserPoints
+    );
     event MonsterSlayed(address indexed player, uint8 indexed enemyId, uint256 totalSlayed);
     event PlayerSlayed(address indexed winner, address indexed loser, uint256 totalSlayed);
-    event AchievementClaimed(
-        address indexed player,
-        uint256 indexed achievementId,
-        uint256 indexed tokenId
-    );
+    event AchievementClaimed(address indexed player, uint256 indexed achievementId, uint256 indexed tokenId);
 
     //////////////////////////////
     // MODIFIERS
@@ -51,9 +46,9 @@ contract OnChainRpgBattle is ERC721 {
 
     modifier onlyOwner() {
         // require(msg.sender == i_owner, "Sender is not the owner");
-        
+
         // this upsaves a lot of gas than requeire does
-        if (msg.sender != i_owner) { revert NotOwner();}
+        if (msg.sender != i_owner) revert NotOwner();
         _;
     }
 
@@ -61,8 +56,8 @@ contract OnChainRpgBattle is ERC721 {
     // CONSTANTS
     /////////////////////////////
 
-    uint256 public constant REGISTER_PRICE = 0.0001 ether;  // registering in game is cheaper ;)
-    uint256 public constant COMMON_PRICE = 0.001 ether;  // battle round, revive, heal
+    uint256 public constant REGISTER_PRICE = 0.0001 ether; // registering in game is cheaper ;)
+    uint256 public constant COMMON_PRICE = 0.001 ether; // battle round, revive, heal
     uint256 public constant CREATE_GUILD_PRICE = 0.01 ether;
     uint256 public constant PLAYER_SLAYER = 100;
     uint256 public constant PLAYER_SLAYER_REQUIRED_KILLS = 100;
@@ -74,10 +69,10 @@ contract OnChainRpgBattle is ERC721 {
     address public immutable i_owner;
 
     // store player objects as values for the sender address as key
-    mapping (address => Player) public players;
+    mapping(address => Player) public players;
 
-     // Enemies mapping
-    mapping(uint8 => Enemy)  public enemies;
+    // Enemies mapping
+    mapping(uint8 => Enemy) public enemies;
 
     // player classes mapping
     mapping(uint8 => string) public classes;
@@ -135,7 +130,7 @@ contract OnChainRpgBattle is ERC721 {
         bool isAlive;
     }
 
-    // Enemy 
+    // Enemy
     struct Enemy {
         uint8 id;
         string name;
@@ -148,7 +143,6 @@ contract OnChainRpgBattle is ERC721 {
         uint256 gold;
     }
 
-    
     constructor() ERC721("OnChain RPG Achievements", "RPGACH") {
         // define contract ownership
         i_owner = msg.sender;
@@ -171,11 +165,11 @@ contract OnChainRpgBattle is ERC721 {
         achievementRequirement[3] = 100; // Skeleton
         achievementRequirement[4] = 100; // Zombie
         achievementRequirement[5] = 100; // Werewolf
-        achievementRequirement[6] = 75;  // Dark Elf
-        achievementRequirement[7] = 75;  // Great Lizard
-        achievementRequirement[8] = 50;  // Troll
-        achievementRequirement[9] = 25;   // Dark Fairy
-        achievementRequirement[10] = 20;  // Dragon
+        achievementRequirement[6] = 75; // Dark Elf
+        achievementRequirement[7] = 75; // Great Lizard
+        achievementRequirement[8] = 50; // Troll
+        achievementRequirement[9] = 25; // Dark Fairy
+        achievementRequirement[10] = 20; // Dragon
 
         // Init classes
         classes[1] = "Warrior";
@@ -189,7 +183,6 @@ contract OnChainRpgBattle is ERC721 {
 
     // register a player
     function registerPlayer(string memory _name, uint8 _classId) public payable {
-
         // require payment to register
         require(msg.value >= REGISTER_PRICE, "Minimium value to registration not reached!");
 
@@ -197,28 +190,23 @@ contract OnChainRpgBattle is ERC721 {
 
         if (_classId == 1) {
             players[msg.sender] = Player(1, _name, 0, 10, _classId, class, 100, 100, 10, 10, 0, true);
-        }
-        else if (_classId == 2) {
+        } else if (_classId == 2) {
             players[msg.sender] = Player(1, _name, 0, 10, _classId, class, 80, 80, 5, 5, 35, true);
-        }
-        else if (_classId == 3) {
-             players[msg.sender] = Player(1, _name, 0, 10, _classId, class, 90, 90, 8, 8, 10, true);
-        }
-        else {
+        } else if (_classId == 3) {
+            players[msg.sender] = Player(1, _name, 0, 10, _classId, class, 90, 90, 8, 8, 10, true);
+        } else {
             require(false, "Invalid class name");
         }
     }
 
     // define fixed attribute bonus when level up by class
-    function getLvUpBonus(uint8 _class) public pure returns (uint8[4] memory){
+    function getLvUpBonus(uint8 _class) public pure returns (uint8[4] memory) {
         uint8[4] memory bonus;
         if (_class == 1) {
             bonus = [25, 12, 8, 0];
-        }
-        else if (_class == 2) {
+        } else if (_class == 2) {
             bonus = [15, 5, 3, 20];
-        }
-        else {
+        } else {
             bonus = [10, 8, 3, 2];
         }
 
@@ -226,17 +214,16 @@ contract OnChainRpgBattle is ERC721 {
     }
 
     // Earn Exp and Lv UP logic
-    function expUp(uint256 _exp) internal returns(bool){
+    function expUp(uint256 _exp) internal returns (bool) {
         bool lvUp = false;
         players[msg.sender].exp += _exp;
         if (players[msg.sender].exp >= players[msg.sender].nextLv) {
-            
             uint8[4] memory bonus = getLvUpBonus(players[msg.sender].classId);
 
             players[msg.sender].lv += 1;
             players[msg.sender].exp = _exp;
             players[msg.sender].nextLv += (players[msg.sender].nextLv * 2) + players[msg.sender].lv;
-            
+
             players[msg.sender].maxHp = players[msg.sender].maxHp + bonus[0];
             players[msg.sender].currentHp = players[msg.sender].maxHp;
             players[msg.sender].atk = players[msg.sender].atk + bonus[1];
@@ -248,20 +235,12 @@ contract OnChainRpgBattle is ERC721 {
     }
 
     // random number generator
-    function randomNumber() public view returns(uint256) {
-        uint random = uint(
-            keccak256(
-                abi.encodePacked(
-                    block.timestamp,
-                    block.prevrandao,
-                    msg.sender,
-                    block.number
-                )
-            )
+    function randomNumber() public view returns (uint256) {
+        uint256 random = uint256(
+            keccak256(abi.encodePacked(block.timestamp, block.prevrandao, msg.sender, block.number))
         );
         return ((random % 100) + 1) / 10;
     }
-
 
     // target player takes damage
     function takeDamage(address _target, uint256 _damage) internal {
@@ -269,11 +248,11 @@ contract OnChainRpgBattle is ERC721 {
             players[_target].currentHp = 0;
         } else {
             players[_target].currentHp -= _damage;
+        }
     }
-}
 
     // damage calculation formula for player attacking
-    function calcDamageForPlayer(address _player, uint8 _enemyId) public view returns(uint256) {
+    function calcDamageForPlayer(address _player, uint8 _enemyId) public view returns (uint256) {
         Player memory player = players[_player];
         Enemy memory enemy = enemies[_enemyId];
 
@@ -293,9 +272,8 @@ contract OnChainRpgBattle is ERC721 {
         return baseDamage + 2 * player.lv;
     }
 
-
     // damage calculation formula for player attacking other player
-    function calcDamageForPlayerVsPlayer(address _player, address _targetPlayer) public view returns(uint256) {
+    function calcDamageForPlayerVsPlayer(address _player, address _targetPlayer) public view returns (uint256) {
         Player memory attacker = players[_player];
         Player memory defender = players[_targetPlayer];
 
@@ -316,7 +294,7 @@ contract OnChainRpgBattle is ERC721 {
     }
 
     // damage calculation formula for enemy attacking
-    function calcDamageForEnemy(uint8 _enemyId, address _targetPlayer) public view returns(uint256) {
+    function calcDamageForEnemy(uint8 _enemyId, address _targetPlayer) public view returns (uint256) {
         Player memory player = players[_targetPlayer];
         Enemy memory enemy = enemies[_enemyId];
 
@@ -327,9 +305,8 @@ contract OnChainRpgBattle is ERC721 {
         return baseDamage * 2;
     }
 
-
     // Returns true if the player crits
-    function playerCrit() public view returns(bool) {
+    function playerCrit() public view returns (bool) {
         uint256 crit = randomNumber();
         if (crit > 6) {
             return true;
@@ -338,9 +315,9 @@ contract OnChainRpgBattle is ERC721 {
     }
 
     // Returns true if the enemy crits
-    function enemyCrit() public view returns(bool) {
+    function enemyCrit() public view returns (bool) {
         uint256 crit = randomNumber();
-        if (crit > 9 ) {
+        if (crit > 9) {
             return true;
         }
         return false;
@@ -371,7 +348,6 @@ contract OnChainRpgBattle is ERC721 {
 
         // round battle logic for each round payed for battling
         for (uint256 round = 0; round < _battleRounds; round++) {
-
             // get enemy and player critical hit chance
             bool playerCrited = playerCrit();
             bool enemyCrited = enemyCrit();
@@ -380,23 +356,20 @@ contract OnChainRpgBattle is ERC721 {
             if (playerCrited) {
                 playerDamage = calcDamageForPlayer(msg.sender, _enemyId) * 2;
                 emit battleLog(round, "Player attacked and caused CRITICAL damage: ", playerDamage);
-            }
-            else {
+            } else {
                 playerDamage = calcDamageForPlayer(msg.sender, _enemyId);
                 emit battleLog(round, "Player attacked and caused damage: ", playerDamage);
             }
-
 
             // Enemy damages player
             if (enemyCrited) {
                 enemyDamage = calcDamageForEnemy(_enemyId, msg.sender) * 2;
                 emit battleLog(round, "Monster attacked and caused CRITICAL damage: ", enemyDamage);
-            }
-            else {
+            } else {
                 enemyDamage = calcDamageForEnemy(_enemyId, msg.sender);
                 emit battleLog(round, "Monster attacked and caused damage: ", enemyDamage);
             }
-            
+
             // Battle results
             if (playerDamage >= enemy.hp) {
                 enemy.hp = 0;
@@ -414,14 +387,13 @@ contract OnChainRpgBattle is ERC721 {
                 bool lvUp = expUp(enemy.exp);
                 bool earnedMoney = randomNumber() > 6;
 
-
                 if (lvUp == true) {
                     players[msg.sender].currentHp = players[msg.sender].maxHp;
                     emit battleLog(round, "LEVEL UP to ", players[msg.sender].lv);
                 }
                 if (earnedMoney) {
-                    // pay player ether 
-                    (bool callSuccess, ) = payable(msg.sender).call{value: enemy.gold}("");
+                    // pay player ether
+                    (bool callSuccess,) = payable(msg.sender).call{value: enemy.gold}("");
                     require(callSuccess, "Call Failed to paying ether");
                     emit battleLog(round, "Enemy dropped ether", enemy.gold);
                 }
@@ -462,7 +434,6 @@ contract OnChainRpgBattle is ERC721 {
 
         // round battle logic for each round payed for battling
         for (uint256 round = 0; round < _battleRounds; round++) {
-
             // get enemy and player critical hit chance
             bool attackerCrited = playerCrit();
             bool defenderCrited = playerCrit();
@@ -471,8 +442,7 @@ contract OnChainRpgBattle is ERC721 {
             if (attackerCrited) {
                 playerDamage = calcDamageForPlayerVsPlayer(msg.sender, _targetPlayer) * 2;
                 emit battleLog(round, "Player attacked and caused CRITICAL damage: ", playerDamage);
-            }
-            else {
+            } else {
                 playerDamage = calcDamageForPlayerVsPlayer(msg.sender, _targetPlayer);
                 emit battleLog(round, "Player attacked and caused damage: ", playerDamage);
             }
@@ -481,12 +451,11 @@ contract OnChainRpgBattle is ERC721 {
             if (defenderCrited) {
                 enemyDamage = calcDamageForPlayerVsPlayer(_targetPlayer, msg.sender) * 2;
                 emit battleLog(round, "Denfender attacked and caused CRITICAL damage: ", enemyDamage);
-            }
-            else {
+            } else {
                 enemyDamage = calcDamageForPlayerVsPlayer(_targetPlayer, msg.sender);
                 emit battleLog(round, "Defender attacked and caused damage: ", enemyDamage);
             }
-            
+
             // Battle results
             takeDamage(_targetPlayer, playerDamage);
 
@@ -522,13 +491,12 @@ contract OnChainRpgBattle is ERC721 {
 
                 players[_targetPlayer].exp += _exp;
                 if (players[_targetPlayer].exp >= players[_targetPlayer].nextLv) {
-                    
                     uint8[4] memory bonus = getLvUpBonus(players[_targetPlayer].classId);
 
                     players[_targetPlayer].lv += 1;
                     players[_targetPlayer].exp = _exp;
                     players[_targetPlayer].nextLv += (players[_targetPlayer].nextLv * 2) + players[_targetPlayer].lv;
-                    
+
                     players[_targetPlayer].maxHp = players[_targetPlayer].maxHp + bonus[0];
                     players[_targetPlayer].currentHp = players[_targetPlayer].maxHp;
                     players[_targetPlayer].atk = players[_targetPlayer].atk + bonus[1];
@@ -544,7 +512,6 @@ contract OnChainRpgBattle is ERC721 {
                 break;
             }
         }
-
     }
 
     // Revive a player
@@ -556,19 +523,20 @@ contract OnChainRpgBattle is ERC721 {
 
     // Heals player health
     function heal(address _player) public payable requirePayment {
-        require(players[_player].isAlive == true && players[_player].currentHp < players[_player].maxHp, "Player is dead or at full health");
+        require(
+            players[_player].isAlive == true && players[_player].currentHp < players[_player].maxHp,
+            "Player is dead or at full health"
+        );
         players[_player].currentHp = players[_player].maxHp;
     }
-
 
     ////////////////////////////////////////////
     // OWNER PRIVILEGES
     ///////////////////////////////////////////
     function withdraw() public onlyOwner {
-        (bool callSuccess, ) = payable(msg.sender).call{value: address(this).balance}("");
+        (bool callSuccess,) = payable(msg.sender).call{value: address(this).balance}("");
         require(callSuccess, "Call Failed");
     }
-
 
     //////////////////////////////
     // GUILD FUNCTIONS
@@ -584,14 +552,8 @@ contract OnChainRpgBattle is ERC721 {
 
         uint256 guildId = nextGuildId;
 
-        guilds[guildId] = Guild({
-            id: guildId,
-            name: _name,
-            guildOwner: msg.sender,
-            membersCount: 1,
-            points: 0,
-            exists: true
-        });
+        guilds[guildId] =
+            Guild({id: guildId, name: _name, guildOwner: msg.sender, membersCount: 1, points: 0, exists: true});
 
         guildIdByNameHash[guildNameHash] = guildId;
         playerGuild[msg.sender] = guildId;
@@ -682,7 +644,6 @@ contract OnChainRpgBattle is ERC721 {
         emit GuildLeft(_guildId, _player);
     }
 
-
     ////////////////////////////////////////////
     // NFT Achievements
     ///////////////////////////////////////////
@@ -696,14 +657,10 @@ contract OnChainRpgBattle is ERC721 {
             uint8 enemyId = uint8(_achievementId);
 
             require(
-                monsterSlayeds[msg.sender][enemyId] >= achievementRequirement[enemyId],
-                "Not enough monsters slayed"
+                monsterSlayeds[msg.sender][enemyId] >= achievementRequirement[enemyId], "Not enough monsters slayed"
             );
         } else if (_achievementId == PLAYER_SLAYER) {
-            require(
-                uniquePlayersSlayed[msg.sender] >= PLAYER_SLAYER_REQUIRED_KILLS,
-                "Not enough unique players slayed"
-            );
+            require(uniquePlayersSlayed[msg.sender] >= PLAYER_SLAYER_REQUIRED_KILLS, "Not enough unique players slayed");
         } else {
             revert("Invalid achievement");
         }
@@ -724,15 +681,8 @@ contract OnChainRpgBattle is ERC721 {
 
         uint256 achievementId = tokenAchievement[tokenId];
 
-        return string(
-            abi.encodePacked(
-                s_baseTokenURI,
-                Strings.toString(achievementId),
-                ".json"
-            )
-        );
+        return string(abi.encodePacked(s_baseTokenURI, Strings.toString(achievementId), ".json"));
     }
-
 
     ////////////////////////////////////////////
     // HELPERS
@@ -774,10 +724,7 @@ contract OnChainRpgBattle is ERC721 {
 
         for (uint256 i = 0; i < 5; i++) {
             for (uint256 j = i + 1; j < 5; j++) {
-                if (
-                    topGuilds[j] != 0 &&
-                    guilds[topGuilds[j]].points > guilds[topGuilds[i]].points
-                ) {
+                if (topGuilds[j] != 0 && guilds[topGuilds[j]].points > guilds[topGuilds[i]].points) {
                     uint256 temp = topGuilds[i];
                     topGuilds[i] = topGuilds[j];
                     topGuilds[j] = temp;
@@ -817,16 +764,9 @@ contract OnChainRpgBattle is ERC721 {
             guilds[loserGuildId].points = 0;
         }
 
-
         _updateTopGuilds(winnerGuildId);
         _updateTopGuilds(loserGuildId);
 
-        emit GuildPointsChanged(
-            winnerGuildId,
-            loserGuildId,
-            guilds[winnerGuildId].points,
-            guilds[loserGuildId].points
-        );
+        emit GuildPointsChanged(winnerGuildId, loserGuildId, guilds[winnerGuildId].points, guilds[loserGuildId].points);
     }
-
 }

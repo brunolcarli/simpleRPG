@@ -24,11 +24,7 @@ contract OnChainRpgBattleTest is Test {
     uint256 public constant REGISTER_PRICE = 0.0001 ether;
     uint256 public constant COMMON_PRICE = 0.001 ether;
 
-    event AchievementClaimed(
-        address indexed player,
-        uint256 indexed achievementId,
-        uint256 indexed tokenId
-    );
+    event AchievementClaimed(address indexed player, uint256 indexed achievementId, uint256 indexed tokenId);
 
     function setUp() public {
         rpg = new OnChainRpgBattleHarness();
@@ -589,14 +585,8 @@ contract OnChainRpgBattleTest is Test {
         assertEq(rpg.playerGuild(PLAYER), 1);
         assertEq(rpg.nextGuildId(), 2);
 
-        (
-            uint256 id,
-            string memory name,
-            address guildOwner,
-            uint256 membersCount,
-            uint256 points,
-            bool exists
-        ) = rpg.guilds(1);
+        (uint256 id, string memory name, address guildOwner, uint256 membersCount, uint256 points, bool exists) =
+            rpg.guilds(1);
 
         assertEq(id, 1);
         assertEq(name, "Dragon Hunters");
@@ -793,7 +783,6 @@ contract OnChainRpgBattleTest is Test {
 
         revert("Could not set random at most value");
     }
-
 
     //////////////////////////////
     // Helpers
