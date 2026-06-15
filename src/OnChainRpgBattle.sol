@@ -236,9 +236,8 @@ contract OnChainRpgBattle is ERC721 {
 
     // random number generator
     function randomNumber() public view returns (uint256) {
-        uint256 random = uint256(
-            keccak256(abi.encodePacked(block.timestamp, block.prevrandao, msg.sender, block.number))
-        );
+        uint256 random =
+            uint256(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, msg.sender, block.number)));
         return ((random % 100) + 1) / 10;
     }
 
