@@ -1,0 +1,20 @@
+{
+  "name": "PVP Master",
+  "description": "Awarded to adventurers who defeated 100 unique players in OnChain RPG Battle.",
+  "image": "ipfs://bafybeicqfg3ljruoum3e2vzbc37daxia7ahaegy364cxntvvkwqhqahpay/pvp-master.png",
+  "attributes": [
+    {
+      "trait_type": "Achievement",
+      "value": "PVP Master"
+    },
+    {
+      "trait_type": "Category",
+      "value": "Player versus Player"
+    },
+    {
+      "display_type": "number",
+      "trait_type": "Required Unique Kills",
+      "value": 100
+    }
+  ]
+}

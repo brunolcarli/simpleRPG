@@ -1,0 +1,20 @@
+{
+  "name": "Orc Slayer",
+  "description": "Awarded to adventurers who defeated 100 Orcs in OnChain RPG Battle.",
+  "image": "ipfs://bafybeicqfg3ljruoum3e2vzbc37daxia7ahaegy364cxntvvkwqhqahpay/orc-slayer.png",
+  "attributes": [
+    {
+      "trait_type": "Achievement",
+      "value": "Orc Slayer"
+    },
+    {
+      "trait_type": "Enemy",
+      "value": "Orc"
+    },
+    {
+      "display_type": "number",
+      "trait_type": "Required Kills",
+      "value": 100
+    }
+  ]
+}

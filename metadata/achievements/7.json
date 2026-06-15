@@ -1,0 +1,20 @@
+{
+  "name": "Great Lizard Slayer",
+  "description": "Awarded to adventurers who defeated 75 Great Lizards in OnChain RPG Battle.",
+  "image": "ipfs://bafybeicqfg3ljruoum3e2vzbc37daxia7ahaegy364cxntvvkwqhqahpay/great-lizard-slayer.png",
+  "attributes": [
+    {
+      "trait_type": "Achievement",
+      "value": "Great Lizard Slayer"
+    },
+    {
+      "trait_type": "Enemy",
+      "value": "Great Lizard"
+    },
+    {
+      "display_type": "number",
+      "trait_type": "Required Kills",
+      "value": 75
+    }
+  ]
+}

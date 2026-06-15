@@ -1,0 +1,20 @@
+{
+  "name": "Dragon Slayer",
+  "description": "Awarded to adventurers who defeated 20 Dragons in OnChain RPG Battle.",
+  "image": "ipfs://bafybeicqfg3ljruoum3e2vzbc37daxia7ahaegy364cxntvvkwqhqahpay/dragon-slayer.png",
+  "attributes": [
+    {
+      "trait_type": "Achievement",
+      "value": "Dragon Slayer"
+    },
+    {
+      "trait_type": "Enemy",
+      "value": "Dragon"
+    },
+    {
+      "display_type": "number",
+      "trait_type": "Required Kills",
+      "value": 20
+    }
+  ]
+}

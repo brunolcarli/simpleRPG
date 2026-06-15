@@ -1,0 +1,20 @@
+{
+  "name": "Werewolf Slayer",
+  "description": "Awarded to adventurers who defeated 100 Werewolves in OnChain RPG Battle.",
+  "image": "ipfs://bafybeicqfg3ljruoum3e2vzbc37daxia7ahaegy364cxntvvkwqhqahpay/werewolf-slayer.png",
+  "attributes": [
+    {
+      "trait_type": "Achievement",
+      "value": "Werewolf Slayer"
+    },
+    {
+      "trait_type": "Enemy",
+      "value": "Werewolf"
+    },
+    {
+      "display_type": "number",
+      "trait_type": "Required Kills",
+      "value": 100
+    }
+  ]
+}
