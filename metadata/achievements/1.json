@@ -1,0 +1,20 @@
+{
+  "name": "Goblin Slayer",
+  "description": "Awarded to adventurers who defeated 100 Goblins in OnChain RPG Battle.",
+  "image": "ipfs://bafybeicqfg3ljruoum3e2vzbc37daxia7ahaegy364cxntvvkwqhqahpay/goblin-slayer.png",
+  "attributes": [
+    {
+      "trait_type": "Achievement",
+      "value": "Goblin Slayer"
+    },
+    {
+      "trait_type": "Enemy",
+      "value": "Goblin"
+    },
+    {
+      "trait_type": "Required Kills",
+      "display_type": "number",
+      "value": 100
+    }
+  ]
+}

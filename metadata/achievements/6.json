@@ -1,0 +1,20 @@
+{
+  "name": "Dark Elf Slayer",
+  "description": "Awarded to adventurers who defeated 75 Dark Elves in OnChain RPG Battle.",
+  "image": "ipfs://bafybeicqfg3ljruoum3e2vzbc37daxia7ahaegy364cxntvvkwqhqahpay/dark-elf-slayer.png",
+  "attributes": [
+    {
+      "trait_type": "Achievement",
+      "value": "Dark Elf Slayer"
+    },
+    {
+      "trait_type": "Enemy",
+      "value": "Dark Elf"
+    },
+    {
+      "display_type": "number",
+      "trait_type": "Required Kills",
+      "value": 75
+    }
+  ]
+}

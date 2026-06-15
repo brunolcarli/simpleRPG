@@ -1,0 +1,20 @@
+{
+  "name": "Troll Slayer",
+  "description": "Awarded to adventurers who defeated 50 Trolls in OnChain RPG Battle.",
+  "image": "ipfs://bafybeicqfg3ljruoum3e2vzbc37daxia7ahaegy364cxntvvkwqhqahpay/troll-slayer.png",
+  "attributes": [
+    {
+      "trait_type": "Achievement",
+      "value": "Troll Slayer"
+    },
+    {
+      "trait_type": "Enemy",
+      "value": "Troll"
+    },
+    {
+      "display_type": "number",
+      "trait_type": "Required Kills",
+      "value": 50
+    }
+  ]
+}
