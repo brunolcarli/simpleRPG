@@ -92,9 +92,15 @@ contract OnChainRpgBattle is ERC721 {
     uint256 public nextGuildId = 1;
 
     // Achievements
-    string private s_baseTokenURI;
+    string private s_baseTokenURI = "ipfs://bafybeiaizao6mctcmmotqdhu26d666s7n3k4yctwfhqul2vg3bis63nmaa/";
+
     mapping(address => mapping(uint8 => uint256)) public monsterSlayeds;
     mapping(address => uint256) public playerSlayeds;
+
+    // PvP Master counts unique defeated wallets
+    mapping(address => mapping(address => bool)) public hasDefeatedPlayer;
+    mapping(address => uint256) public uniquePlayersSlayed;
+
     mapping(address => mapping(uint256 => bool)) public hasAchievement;
     mapping(uint256 => uint256) public tokenAchievement;
     mapping(uint8 => uint256) public achievementRequirement;
@@ -156,7 +162,7 @@ contract OnChainRpgBattle is ERC721 {
         enemies[6] = Enemy(6, "Dark Elf", 250, 20, 25, 40, true, 150, 0.0006 ether);
         enemies[7] = Enemy(7, "Great Lizard", 80, 50, 50, 50, true, 500, 0.0007 ether);
         enemies[8] = Enemy(8, "Troll", 1000, 120, 100, 45, true, 600, 0.008 ether);
-        enemies[9] = Enemy(9, "Dark Fairy", 1200, 80, 150, 150, true, 750, 0.009 ether);
+        enemies[9] = Enemy(9, "Dark Fairy", 1200, 80, 150, 150, true, 750, 0.0009 ether);
         enemies[10] = Enemy(10, "Dragon", 2200, 200, 200, 200, true, 860, 0.001 ether);
 
         // init achiements rewards requirements
@@ -165,7 +171,6 @@ contract OnChainRpgBattle is ERC721 {
         achievementRequirement[3] = 100; // Skeleton
         achievementRequirement[4] = 100; // Zombie
         achievementRequirement[5] = 100; // Werewolf
-
         achievementRequirement[6] = 75;  // Dark Elf
         achievementRequirement[7] = 75;  // Great Lizard
         achievementRequirement[8] = 50;  // Troll
@@ -490,8 +495,7 @@ contract OnChainRpgBattle is ERC721 {
 
             // exp up for attacker only
             if (players[_targetPlayer].currentHp == 0) {
-                playerSlayeds[msg.sender]++;
-                emit PlayerSlayed(msg.sender, _targetPlayer, playerSlayeds[msg.sender]);
+                _registerPlayerSlay(msg.sender, _targetPlayer);
 
                 bool lvUp = expUp(players[msg.sender].lv * 4 * players[_targetPlayer].lv * 3);
                 players[_targetPlayer].isAlive = false;
@@ -507,8 +511,7 @@ contract OnChainRpgBattle is ERC721 {
             }
 
             if (players[msg.sender].currentHp == 0) {
-                playerSlayeds[_targetPlayer]++;
-                emit PlayerSlayed(_targetPlayer, msg.sender, playerSlayeds[_targetPlayer]);
+                _registerPlayerSlay(_targetPlayer, msg.sender);
 
                 uint256 _exp = players[_targetPlayer].lv * 4 * players[msg.sender].lv * 3;
                 // bool lvUp = expUp(_exp);
@@ -698,8 +701,8 @@ contract OnChainRpgBattle is ERC721 {
             );
         } else if (_achievementId == PLAYER_SLAYER) {
             require(
-                playerSlayeds[msg.sender] >= PLAYER_SLAYER_REQUIRED_KILLS,
-                "Not enough players slayed"
+                uniquePlayersSlayed[msg.sender] >= PLAYER_SLAYER_REQUIRED_KILLS,
+                "Not enough unique players slayed"
             );
         } else {
             revert("Invalid achievement");
@@ -783,6 +786,17 @@ contract OnChainRpgBattle is ERC721 {
         }
     }
 
+    function _registerPlayerSlay(address _winner, address _loser) internal {
+        playerSlayeds[_winner]++;
+
+        if (!hasDefeatedPlayer[_winner][_loser]) {
+            hasDefeatedPlayer[_winner][_loser] = true;
+            uniquePlayersSlayed[_winner]++;
+        }
+
+        emit PlayerSlayed(_winner, _loser, playerSlayeds[_winner]);
+    }
+
     function _awardGuildPoints(address _winner, address _loser) internal {
         uint256 winnerGuildId = playerGuild[_winner];
         uint256 loserGuildId = playerGuild[_loser];
@@ -802,6 +816,7 @@ contract OnChainRpgBattle is ERC721 {
         } else {
             guilds[loserGuildId].points = 0;
         }
+
 
         _updateTopGuilds(winnerGuildId);
         _updateTopGuilds(loserGuildId);

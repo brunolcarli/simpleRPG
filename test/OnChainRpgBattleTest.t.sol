@@ -543,7 +543,7 @@ contract OnChainRpgBattleTest is Test {
         rpg.registerPlayer{value: REGISTER_PRICE}("Fresh", 1);
 
         vm.prank(freshPlayer);
-        vm.expectRevert("Not enough players slayed");
+        vm.expectRevert("Not enough unique players slayed");
         rpg.claimAchievement(100);
     }
 
