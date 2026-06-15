@@ -92,7 +92,7 @@ contract OnChainRpgBattle is ERC721 {
     uint256 public nextGuildId = 1;
 
     // Achievements
-    string private s_baseTokenURI = "ipfs://bafybeiaizao6mctcmmotqdhu26d666s7n3k4yctwfhqul2vg3bis63nmaa/";
+    string private s_baseTokenURI = "ipfs://bafybeihebr72fet5ccpp5qrxwhxo3jimxb4hshffk6b6w3kej35oe4xtbu/";
 
     mapping(address => mapping(uint8 => uint256)) public monsterSlayeds;
     mapping(address => uint256) public playerSlayeds;
