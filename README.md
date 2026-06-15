@@ -1,14 +1,14 @@
 # ⚔️ Simple Battle RPG - Solidity Smart Contract
 
-An on-chain medieval fantasy RPG battle system built with Solidity and Ethereum smart contracts.
+An on-chain medieval fantasy RPG built entirely with Solidity and Ethereum smart contracts.
 
-Players can create heroes, battle monsters, challenge other players, gain EXP, level up, earn ETH loot, heal, revive, and fight entirely on-chain using Ethereum transactions.
+Players can create heroes, battle monsters, challenge other players, join guilds, earn achievement NFTs, gain EXP, level up, earn ETH loot, and progress through a persistent on-chain world.
 
 ---
 
 # 🌐 Live Frontend
 
-DApp frontend:
+DApp Frontend:
 
 https://ethereum-simple-rpg-game.vercel.app/
 
@@ -34,40 +34,52 @@ https://github.com/brunolcarli/EthereumSimpleRpgGame
 
 # 🚀 Features
 
-- 🧙 Multiple character classes
-- ⚔️ On-chain PvE battles
-- 🛡️ On-chain PvP battles
-- 👾 Multiple enemies with unique stats
-- 📈 EXP and level-up system
-- ❤️ HP / Damage mechanics
-- ☠️ Death and revive mechanics
-- 🧪 Heal system
-- 💰 ETH-based gameplay economy
-- 🎲 Critical hit system
-- 🎁 Random ETH loot drops
-- 📜 Solidity combat event logs
-- 🔥 Dynamic battle pricing
-- 🏹 Magic vs physical combat systems
+* 🧙 Multiple character classes
+* ⚔️ On-chain PvE battles
+* 🛡️ On-chain PvP battles
+* 👾 10 unique enemies
+* 📈 EXP and level-up system
+* ❤️ HP and damage mechanics
+* ☠️ Death and revive mechanics
+* 🧪 Healing system
+* 💰 ETH-based gameplay economy
+* 🎲 Critical hit system
+* 🎁 Random ETH loot drops
+* 🏰 Guild system
+* 👑 Guild ownership and member management
+* 🏆 Top 5 guild ranking
+* ⚔️ Guild versus guild point rewards
+* 🎖️ Achievement system
+* 🖼️ ERC721 Achievement NFTs
+* 🌐 IPFS-hosted NFT metadata and artwork
+* 📜 Solidity combat event logs
+* 🔥 Dynamic battle pricing
+* 🏹 Physical and magical combat systems
 
 ---
 
 # 🛠 Built With
 
-- Solidity `0.8.18`
-- Ethereum Virtual Machine (EVM)
-- Remix IDE
+* Solidity `0.8.35`
+* Foundry
+* OpenZeppelin Contracts
+* Ethereum Virtual Machine (EVM)
+* IPFS
+* Pinata
+* ethers.js
+* Vercel
 
 ---
 
-# 🎮 Game Mechanics
+# 🎮 Character Classes
 
-## Character Classes
-
-| Class | Description |
-|---|---|
+| Class       | Description         |
+| ----------- | ------------------- |
 | 🗡️ Warrior | High HP and defense |
-| 🧙 Mage | High magic damage |
-| 🏹 Ranger | Balanced fighter |
+| 🧙 Mage     | High magic damage   |
+| 🏹 Ranger   | Balanced fighter    |
+
+Each class receives unique stat bonuses on level-up.
 
 ---
 
@@ -75,68 +87,138 @@ https://github.com/brunolcarli/EthereumSimpleRpgGame
 
 The game currently includes 10 enemies:
 
-| Enemy | Description |
-|---|---|
-| 👺 Goblin | Weak beginner enemy |
-| 🪓 Orc | Strong melee fighter |
-| 💀 Skeleton | Balanced undead |
-| 🧟 Zombie | High HP tank |
-| 🐺 Werewolf | Fast attacker |
-| 🧝 Dark Elf | Magic attacker |
+| Enemy           | Description            |
+| --------------- | ---------------------- |
+| 👺 Goblin       | Weak beginner enemy    |
+| 🪓 Orc          | Strong melee fighter   |
+| 💀 Skeleton     | Balanced undead        |
+| 🧟 Zombie       | High HP tank           |
+| 🐺 Werewolf     | Fast attacker          |
+| 🧝 Dark Elf     | Magic attacker         |
 | 🦎 Great Lizard | Agile reptile creature |
-| 🪨 Troll | Massive brute |
-| 🧚 Dark Fairy | Powerful magic enemy |
-| 🐉 Dragon | Endgame boss |
+| 🪨 Troll        | Massive brute          |
+| 🧚 Dark Fairy   | Powerful magic enemy   |
+| 🐉 Dragon       | Endgame boss           |
 
-Each enemy has:
+Each enemy contains:
 
-- HP
-- Attack
-- Defense
-- Magic
-- EXP reward
-- ETH reward drop chance
+* HP
+* Attack
+* Defense
+* Magic
+* EXP reward
+* ETH reward
 
 ---
 
-# ⚔️ Battle Systems
+# ⚔️ PvE Battles
 
-## PvE Battles
-
-Players can fight monsters using:
+Players can fight monsters through:
 
 ```solidity
 battle(enemyId, rounds)
 ```
 
-Combat is fully processed on-chain.
+Features:
 
-Features include:
+* Critical hits
+* Damage calculations
+* ETH loot rewards
+* EXP rewards
+* Level-up logic
+* Death mechanics
 
-- Critical hits
-- Damage calculations
-- Random ETH rewards
-- EXP rewards
-- Level-up logic
-- Death system
+Combat is processed entirely on-chain.
 
 ---
 
-## PvP Battles
+# 🛡️ PvP Battles
 
-Players can challenge real players:
+Players can challenge other players:
 
 ```solidity
 challengePlayer(targetPlayer, rounds)
 ```
 
-Features include:
+Features:
 
-- Player vs player combat
-- Critical hits
-- EXP rewards
-- Permanent death until revived
-- Class-based combat calculations
+* Player versus player combat
+* Class-based damage calculations
+* Critical hits
+* Death mechanics
+* Guild point rewards
+* Achievement progress
+
+All combat outcomes are permanently recorded on-chain.
+
+---
+
+# 🏰 Guild System
+
+Players can organize themselves into guilds.
+
+## Guild Features
+
+* Create guilds
+* Join guilds
+* Leave guilds
+* Guild ownership
+* Add members
+* Remove members
+* Guild rankings
+* Top 5 guild leaderboard
+
+Guilds are fully managed on-chain.
+
+---
+
+# 🏆 Guild Wars
+
+When a player defeats a member of another guild:
+
+* Winning guild gains points
+* Losing guild loses points
+
+This creates a persistent competitive ecosystem between guilds.
+
+Guild rankings are updated automatically.
+
+---
+
+# 🎖️ Achievement NFTs
+
+The game includes ERC721 achievement NFTs.
+
+Achievements are permanently earned and owned by players.
+
+All NFT metadata and artwork are hosted on IPFS.
+
+---
+
+## Monster Slayer Collection
+
+| NFT                 | Requirement             |
+| ------------------- | ----------------------- |
+| Goblin Slayer       | Defeat 100 Goblins      |
+| Orc Slayer          | Defeat 100 Orcs         |
+| Skeleton Slayer     | Defeat 100 Skeletons    |
+| Zombie Slayer       | Defeat 100 Zombies      |
+| Werewolf Slayer     | Defeat 100 Werewolves   |
+| Dark Elf Slayer     | Defeat 75 Dark Elves    |
+| Great Lizard Slayer | Defeat 75 Great Lizards |
+| Troll Slayer        | Defeat 50 Trolls        |
+| Dark Fairy Slayer   | Defeat 25 Dark Fairies  |
+| Dragon Slayer       | Defeat 20 Dragons       |
+
+---
+
+## PvP Achievement
+
+| NFT        | Requirement               |
+| ---------- | ------------------------- |
+| PVP Master | Defeat 100 unique players |
+
+Unique player kills are tracked separately to prevent farming the same opponent repeatedly.
 
 ---
 
@@ -144,14 +226,14 @@ Features include:
 
 Players gain EXP after victories.
 
-When EXP exceeds the required threshold:
+When enough EXP is accumulated:
 
-- Level increases
-- Max HP increases
-- Stats increase
-- HP is restored
+* Level increases
+* Max HP increases
+* Stats increase
+* HP is fully restored
 
-Each class receives unique stat bonuses on level-up.
+Each class receives unique progression bonuses.
 
 ---
 
@@ -159,7 +241,7 @@ Each class receives unique stat bonuses on level-up.
 
 ## Heal
 
-Restore a living player's HP:
+Restore HP to an injured player:
 
 ```solidity
 heal(playerAddress)
@@ -169,7 +251,7 @@ heal(playerAddress)
 
 ## Revive
 
-Revive dead players:
+Bring a dead player back to life:
 
 ```solidity
 revive(playerAddress)
@@ -179,7 +261,7 @@ revive(playerAddress)
 
 # 💰 ETH Economy
 
-## Registration Fee
+## Registration Cost
 
 ```solidity
 registerPrice = 0.0001 ether
@@ -189,22 +271,20 @@ registerPrice = 0.0001 ether
 
 ## Common Action Cost
 
-The following actions use:
-
 ```solidity
 commonPrice = 0.001 ether
 ```
 
 Used for:
 
-- Battles
-- PvP
-- Heal
-- Revive
+* PvE battles
+* PvP battles
+* Healing
+* Reviving
 
 ---
 
-## Dynamic Battle Cost
+## Dynamic Battle Pricing
 
 Battle costs scale with rounds:
 
@@ -214,11 +294,11 @@ battleCost = commonPrice * rounds
 
 Example:
 
-| Rounds | ETH Cost |
-|---|---|
-| 1 | 0.001 ETH |
-| 5 | 0.005 ETH |
-| 10 | 0.01 ETH |
+| Rounds | Cost      |
+| ------ | --------- |
+| 1      | 0.001 ETH |
+| 5      | 0.005 ETH |
+| 10     | 0.01 ETH  |
 
 ---
 
@@ -232,24 +312,24 @@ Example:
 emit battleLog(round, "Enemy dropped ether", enemy.gold);
 ```
 
-Stronger enemies drop larger ETH rewards.
+Stronger enemies provide larger rewards.
 
 ---
 
 # 🎲 Randomness System
 
-The game uses pseudo-randomness based on:
+The game currently uses pseudo-randomness based on:
 
-- `block.timestamp`
-- `block.prevrandao`
-- `msg.sender`
-- `block.number`
+* block.timestamp
+* block.prevrandao
+* msg.sender
+* block.number
 
 Used for:
 
-- Damage variance
-- Critical hits
-- ETH reward drops
+* Critical hits
+* ETH drops
+* Combat variance
 
 ---
 
@@ -263,13 +343,13 @@ Critical attacks deal:
 damage * 2
 ```
 
-Combat logs display critical attacks in real time.
+Critical hits are emitted through battle events and displayed in the frontend.
 
 ---
 
 # 📜 Solidity Events
 
-Combat actions emit Solidity events:
+Combat emits events directly from the smart contract:
 
 ```solidity
 event battleLog(uint8 round, string message, uint value);
@@ -277,54 +357,60 @@ event battleLog(uint8 round, string message, uint value);
 
 Examples:
 
-- Damage dealt
-- Critical damage
-- Level up
-- Player death
-- Monster defeat
-- ETH drops
+* Damage dealt
+* Critical hits
+* Level up
+* Monster defeat
+* Player death
+* ETH rewards
 
 ---
 
-# 🧪 Example Gameplay Flow
+# 🧪 Example Gameplay Loop
 
 1. Connect wallet
 2. Register hero
-3. Battle enemies
+3. Battle monsters
 4. Gain EXP
 5. Level up
 6. Earn ETH loot
-7. Challenge players
-8. Heal or revive if needed
-9. Defeat stronger enemies
+7. Join or create a guild
+8. Challenge players
+9. Earn achievement NFTs
+10. Climb the guild rankings
+11. Become a legendary adventurer
 
 ---
 
-# 📦 Smart Contract Functions
+# 📦 Main Functions
 
 ## Player Functions
 
-- `registerPlayer()`
-- `battle()`
-- `challengePlayer()`
-- `heal()`
-- `revive()`
+* `registerPlayer()`
+* `battle()`
+* `challengePlayer()`
+* `heal()`
+* `revive()`
 
----
+## Guild Functions
+
+* `createGuild()`
+* `joinGuild()`
+* `leaveGuild()`
+* `addGuildMember()`
+* `removeGuildMember()`
+* `getGuilds()`
+* `getTopGuilds()`
+
+## Achievement Functions
+
+* `claimAchievement()`
 
 ## Combat Functions
 
-- `calcDamageForPlayer()`
-- `calcDamageForEnemy()`
-- `calcDamageForPlayerVsPlayer()`
-
----
-
-## Utility Functions
-
-- `randomNumber()`
-- `expUp()`
-- `getLvUpBonus()`
+* `calcDamageForPlayer()`
+* `calcDamageForEnemy()`
+* `calcDamageForPlayerVsPlayer()`
 
 ---
 
@@ -336,7 +422,7 @@ Examples:
 withdraw()
 ```
 
-Protected with:
+Protected by:
 
 ```solidity
 onlyOwner
@@ -346,18 +432,18 @@ onlyOwner
 
 # 🔮 Future Improvements
 
-- 🖼️ NFT characters
-- 🪙 ERC20 in-game currency
-- 🎒 Inventory system
-- 🗡️ Equipment system
-- 🛒 Marketplace
-- 🐲 Raid bosses
-- 🌎 Multiplayer world
-- ⚡ Guild system
-- 🎵 Sound effects
-- 🧠 Chainlink VRF integration
-- 🏰 Persistent world state
-- 📱 Mobile optimization
+* 🪙 ERC20 in-game currency
+* 🎒 Inventory system
+* 🗡️ Equipment system
+* 🛒 Marketplace
+* 🐲 Raid bosses
+* 🏰 Guild treasury
+* ⚡ Guild versus guild tournaments
+* 🌎 Persistent world map
+* 🎵 Sound effects
+* 🧠 Chainlink VRF integration
+* 📱 Mobile-first interface
+* 🧬 Character NFTs
 
 ---
 
@@ -365,9 +451,9 @@ onlyOwner
 
 This project was created for educational and portfolio purposes.
 
-The randomness system used in this smart contract is pseudo-random and is NOT secure for production-grade blockchain games.
+The randomness implementation is pseudo-random and should not be considered secure for production-grade blockchain games.
 
-For production environments, verifiable randomness such as Chainlink VRF should be used.
+For production environments, a verifiable randomness solution such as Chainlink VRF should be used.
 
 ---
 
@@ -375,16 +461,20 @@ For production environments, verifiable randomness such as Chainlink VRF should 
 
 This project explores:
 
-- Solidity
-- Smart contracts
-- Ethereum game architecture
-- EVM mechanics
-- Payable functions
-- Event systems
-- On-chain state management
-- PvP mechanics
-- Blockchain game design
-- Web3 game development
+* Solidity
+* Smart Contracts
+* Foundry
+* ERC721 NFTs
+* Ethereum Game Design
+* EVM Mechanics
+* Payable Functions
+* Event Systems
+* On-Chain State Management
+* PvP Mechanics
+* Guild Systems
+* IPFS Metadata
+* Web3 Development
+* Blockchain Gaming
 
 ---
 
@@ -396,6 +486,6 @@ MIT License
 
 # 👨‍💻 Author
 
-beelzebruno — 2026
+**beelzebruno — 2026**
 
-Built as a blockchain and Solidity learning project.
+Built as a blockchain development, Solidity and Web3 learning project.
