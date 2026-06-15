@@ -4,8 +4,18 @@ pragma solidity ^0.8.18;
 import {Test} from "forge-std/Test.sol";
 import {OnChainRpgBattle} from "../src/OnChainRpgBattle.sol";
 
+contract OnChainRpgBattleHarness is OnChainRpgBattle {
+    function setMonsterSlayeds(address player, uint8 enemyId, uint256 amount) external {
+        monsterSlayeds[player][enemyId] = amount;
+    }
+
+    function setPlayerSlayeds(address player, uint256 amount) external {
+        playerSlayeds[player] = amount;
+    }
+}
+
 contract OnChainRpgBattleTest is Test {
-    OnChainRpgBattle public rpg;
+    OnChainRpgBattleHarness public rpg;
 
     address public PLAYER = makeAddr("PLAYER");
     address public PLAYER_TWO = makeAddr("PLAYER_TWO");
@@ -14,8 +24,14 @@ contract OnChainRpgBattleTest is Test {
     uint256 public constant REGISTER_PRICE = 0.0001 ether;
     uint256 public constant COMMON_PRICE = 0.001 ether;
 
+    event AchievementClaimed(
+        address indexed player,
+        uint256 indexed achievementId,
+        uint256 indexed tokenId
+    );
+
     function setUp() public {
-        rpg = new OnChainRpgBattle();
+        rpg = new OnChainRpgBattleHarness();
 
         vm.deal(PLAYER, 10 ether);
         vm.deal(PLAYER_TWO, 10 ether);
@@ -453,6 +469,331 @@ contract OnChainRpgBattleTest is Test {
         assertEq(_getCurrentHp(PLAYER_TWO), 0);
     }
 
+    function testGuildPointsAreUpdatedWhenPlayerKillsEnemyGuildMember() public {
+        _registerPlayer(PLAYER, "Bruno", 2);
+        _registerPlayer(PLAYER_TWO, "Target", 3);
+
+        vm.prank(PLAYER);
+        rpg.createGuild{value: 0.01 ether}("Mage Guild");
+
+        vm.prank(PLAYER_TWO);
+        rpg.createGuild{value: 0.01 ether}("Ranger Guild");
+
+        _setRandomAtLeast(PLAYER, 10);
+
+        vm.prank(PLAYER);
+        rpg.challengePlayer{value: COMMON_PRICE * 10}(PLAYER_TWO, 10);
+
+        (,,,, uint256 winnerPoints,) = rpg.guilds(1);
+        (,,,, uint256 loserPoints,) = rpg.guilds(2);
+
+        assertEq(winnerPoints, 10);
+        assertEq(loserPoints, 0);
+    }
+
+    function testTopGuildsReturnsGuildWithMostPoints() public {
+        _registerPlayer(PLAYER, "Bruno", 2);
+        _registerPlayer(PLAYER_TWO, "Target", 3);
+
+        vm.prank(PLAYER);
+        rpg.createGuild{value: 0.01 ether}("Mage Guild");
+
+        vm.prank(PLAYER_TWO);
+        rpg.createGuild{value: 0.01 ether}("Ranger Guild");
+
+        _setRandomAtLeast(PLAYER, 10);
+
+        vm.prank(PLAYER);
+        rpg.challengePlayer{value: COMMON_PRICE * 10}(PLAYER_TWO, 10);
+
+        OnChainRpgBattle.Guild[5] memory topGuilds = rpg.getTopGuilds();
+
+        assertEq(topGuilds[0].id, 1);
+        assertEq(topGuilds[0].name, "Mage Guild");
+        assertEq(topGuilds[0].points, 10);
+    }
+
+    function testClaimAchievementRevertsIfPlayerIsNotRegistered() public {
+        vm.prank(PLAYER);
+        vm.expectRevert("Only registered players can claim achievements");
+        rpg.claimAchievement(1);
+    }
+
+    function testClaimAchievementRevertsIfInvalidAchievement() public {
+        _registerPlayer(PLAYER, "Bruno", 1);
+
+        vm.prank(PLAYER);
+        vm.expectRevert("Invalid achievement");
+        rpg.claimAchievement(999);
+    }
+
+    function testClaimAchievementRevertsIfNotEnoughMonsterKills() public {
+        _registerPlayer(PLAYER, "Bruno", 1);
+
+        vm.prank(PLAYER);
+        vm.expectRevert("Not enough monsters slayed");
+        rpg.claimAchievement(1);
+    }
+
+    function testClaimAchievementRevertsIfNotEnoughPlayerKills() public {
+        address freshPlayer = makeAddr("freshPlayer");
+        vm.deal(freshPlayer, 10 ether);
+
+        vm.prank(freshPlayer);
+        rpg.registerPlayer{value: REGISTER_PRICE}("Fresh", 1);
+
+        vm.prank(freshPlayer);
+        vm.expectRevert("Not enough players slayed");
+        rpg.claimAchievement(100);
+    }
+
+    function testCanClaimMonsterAchievement() public {
+        _registerPlayer(PLAYER, "Bruno", 1);
+
+        uint256 requirement = rpg.achievementRequirement(1);
+        rpg.setMonsterSlayeds(PLAYER, 1, requirement);
+
+        vm.expectEmit(true, true, true, false);
+        emit AchievementClaimed(PLAYER, 1, 1);
+
+        vm.prank(PLAYER);
+        rpg.claimAchievement(1);
+
+        assertEq(rpg.ownerOf(1), PLAYER);
+        assertEq(rpg.balanceOf(PLAYER), 1);
+        assertTrue(rpg.hasAchievement(PLAYER, 1));
+        assertEq(rpg.tokenAchievement(1), 1);
+    }
+
+    function testCannotClaimSameAchievementTwice() public {
+        _registerPlayer(PLAYER, "Bruno", 1);
+
+        uint256 requirement = rpg.achievementRequirement(1);
+        rpg.setMonsterSlayeds(PLAYER, 1, requirement);
+
+        vm.startPrank(PLAYER);
+        rpg.claimAchievement(1);
+
+        vm.expectRevert("Achievement already claimed");
+        rpg.claimAchievement(1);
+
+        vm.stopPrank();
+    }
+
+    function testPlayerCanCreateGuild() public {
+        _registerPlayer(PLAYER, "Bruno", 1);
+
+        vm.prank(PLAYER);
+        rpg.createGuild{value: 0.01 ether}("Dragon Hunters");
+
+        assertEq(rpg.playerGuild(PLAYER), 1);
+        assertEq(rpg.nextGuildId(), 2);
+
+        (
+            uint256 id,
+            string memory name,
+            address guildOwner,
+            uint256 membersCount,
+            uint256 points,
+            bool exists
+        ) = rpg.guilds(1);
+
+        assertEq(id, 1);
+        assertEq(name, "Dragon Hunters");
+        assertEq(guildOwner, PLAYER);
+        assertEq(membersCount, 1);
+        assertEq(points, 0);
+        assertTrue(exists);
+    }
+
+    function testCreateGuildRevertsWithoutPayment() public {
+        _registerPlayer(PLAYER, "Bruno", 1);
+
+        vm.prank(PLAYER);
+        vm.expectRevert("Minimum payment required to create guild");
+        rpg.createGuild{value: 0.01 ether - 1}("Dragon Hunters");
+    }
+
+    function testCreateGuildRevertsIfPlayerNotRegistered() public {
+        vm.prank(PLAYER);
+        vm.expectRevert("Only registered alive players can create guilds");
+        rpg.createGuild{value: 0.01 ether}("Dragon Hunters");
+    }
+
+    function testCreateGuildRevertsIfNameAlreadyExists() public {
+        _registerPlayer(PLAYER, "Bruno", 1);
+        _registerPlayer(PLAYER_TWO, "Gandalf", 2);
+
+        vm.prank(PLAYER);
+        rpg.createGuild{value: 0.01 ether}("Dragon Hunters");
+
+        vm.prank(PLAYER_TWO);
+        vm.expectRevert("Guild name already exists");
+        rpg.createGuild{value: 0.01 ether}("Dragon Hunters");
+    }
+
+    function testPlayerCanJoinGuild() public {
+        _registerPlayer(PLAYER, "Bruno", 1);
+        _registerPlayer(PLAYER_TWO, "Gandalf", 2);
+
+        vm.prank(PLAYER);
+        rpg.createGuild{value: 0.01 ether}("Dragon Hunters");
+
+        vm.prank(PLAYER_TWO);
+        rpg.joinGuild(1);
+
+        assertEq(rpg.playerGuild(PLAYER_TWO), 1);
+
+        (,,, uint256 membersCount,,) = rpg.guilds(1);
+        assertEq(membersCount, 2);
+    }
+
+    function testJoinGuildRevertsIfGuildDoesNotExist() public {
+        _registerPlayer(PLAYER, "Bruno", 1);
+
+        vm.prank(PLAYER);
+        vm.expectRevert("Guild does not exist");
+        rpg.joinGuild(999);
+    }
+
+    function testPlayerCanLeaveGuild() public {
+        _registerPlayer(PLAYER, "Bruno", 1);
+        _registerPlayer(PLAYER_TWO, "Gandalf", 2);
+
+        vm.prank(PLAYER);
+        rpg.createGuild{value: 0.01 ether}("Dragon Hunters");
+
+        vm.prank(PLAYER_TWO);
+        rpg.joinGuild(1);
+
+        vm.prank(PLAYER_TWO);
+        rpg.leaveGuild();
+
+        assertEq(rpg.playerGuild(PLAYER_TWO), 0);
+
+        (,,, uint256 membersCount,,) = rpg.guilds(1);
+        assertEq(membersCount, 1);
+    }
+
+    function testGuildOwnerCannotLeaveGuild() public {
+        _registerPlayer(PLAYER, "Bruno", 1);
+
+        vm.prank(PLAYER);
+        rpg.createGuild{value: 0.01 ether}("Dragon Hunters");
+
+        vm.prank(PLAYER);
+        vm.expectRevert("Guild owner cannot leave guild");
+        rpg.leaveGuild();
+    }
+
+    function testGuildOwnerCanAddMember() public {
+        _registerPlayer(PLAYER, "Bruno", 1);
+        _registerPlayer(PLAYER_TWO, "Gandalf", 2);
+
+        vm.prank(PLAYER);
+        rpg.createGuild{value: 0.01 ether}("Dragon Hunters");
+
+        vm.prank(PLAYER);
+        rpg.addGuildMember(1, PLAYER_TWO);
+
+        assertEq(rpg.playerGuild(PLAYER_TWO), 1);
+
+        (,,, uint256 membersCount,,) = rpg.guilds(1);
+        assertEq(membersCount, 2);
+    }
+
+    function testNonGuildOwnerCannotAddMember() public {
+        _registerPlayer(PLAYER, "Bruno", 1);
+        _registerPlayer(PLAYER_TWO, "Gandalf", 2);
+        _registerPlayer(ATTACKER, "Evil", 3);
+
+        vm.prank(PLAYER);
+        rpg.createGuild{value: 0.01 ether}("Dragon Hunters");
+
+        vm.prank(ATTACKER);
+        vm.expectRevert("Only guild owner can add members");
+        rpg.addGuildMember(1, PLAYER_TWO);
+    }
+
+    function testGuildOwnerCanRemoveMember() public {
+        _registerPlayer(PLAYER, "Bruno", 1);
+        _registerPlayer(PLAYER_TWO, "Gandalf", 2);
+
+        vm.prank(PLAYER);
+        rpg.createGuild{value: 0.01 ether}("Dragon Hunters");
+
+        vm.prank(PLAYER);
+        rpg.addGuildMember(1, PLAYER_TWO);
+
+        vm.prank(PLAYER);
+        rpg.removeGuildMember(1, PLAYER_TWO);
+
+        assertEq(rpg.playerGuild(PLAYER_TWO), 0);
+
+        (,,, uint256 membersCount,,) = rpg.guilds(1);
+        assertEq(membersCount, 1);
+    }
+
+    function testGuildOwnerCannotRemoveHimself() public {
+        _registerPlayer(PLAYER, "Bruno", 1);
+
+        vm.prank(PLAYER);
+        rpg.createGuild{value: 0.01 ether}("Dragon Hunters");
+
+        vm.prank(PLAYER);
+        vm.expectRevert("Guild owner cannot be removed");
+        rpg.removeGuildMember(1, PLAYER);
+    }
+
+    function testGetGuildsReturnsCreatedGuilds() public {
+        _registerPlayer(PLAYER, "Bruno", 1);
+        _registerPlayer(PLAYER_TWO, "Gandalf", 2);
+
+        vm.prank(PLAYER);
+        rpg.createGuild{value: 0.01 ether}("Dragon Hunters");
+
+        vm.prank(PLAYER_TWO);
+        rpg.createGuild{value: 0.01 ether}("Mage Council");
+
+        OnChainRpgBattle.Guild[] memory guilds = rpg.getGuilds(0, 10);
+
+        assertEq(guilds.length, 2);
+        assertEq(guilds[0].name, "Dragon Hunters");
+        assertEq(guilds[1].name, "Mage Council");
+    }
+
+    function _setRandomAtLeast(address caller, uint256 minValue) internal {
+        for (uint256 i = 1; i < 10_000; i++) {
+            vm.warp(1_000 + i);
+            vm.roll(2_000 + i);
+
+            vm.prank(caller);
+            uint256 random = rpg.randomNumber();
+
+            if (random >= minValue) {
+                return;
+            }
+        }
+
+        revert("Could not set random at least value");
+    }
+
+    function _setRandomAtMost(address caller, uint256 maxValue) internal {
+        for (uint256 i = 1; i < 10_000; i++) {
+            vm.warp(10_000 + i);
+            vm.roll(20_000 + i);
+
+            vm.prank(caller);
+            uint256 random = rpg.randomNumber();
+
+            if (random <= maxValue) {
+                return;
+            }
+        }
+
+        revert("Could not set random at most value");
+    }
+
 
     //////////////////////////////
     // Helpers
@@ -509,38 +850,6 @@ contract OnChainRpgBattleTest is Test {
 
     function _getIsAlive(address player) internal view returns (bool isAlive) {
         (,,,,,,,,,,, isAlive) = rpg.players(player);
-    }
-
-    function _setRandomAtLeast(address caller, uint256 minValue) internal {
-        for (uint256 i = 1; i < 10_000; i++) {
-            vm.warp(1_000 + i);
-            vm.roll(2_000 + i);
-
-            vm.prank(caller);
-            uint256 random = rpg.randomNumber();
-
-            if (random >= minValue) {
-                return;
-            }
-        }
-
-        revert("Could not set random at least value");
-    }
-
-    function _setRandomAtMost(address caller, uint256 maxValue) internal {
-        for (uint256 i = 1; i < 10_000; i++) {
-            vm.warp(10_000 + i);
-            vm.roll(20_000 + i);
-
-            vm.prank(caller);
-            uint256 random = rpg.randomNumber();
-
-            if (random <= maxValue) {
-                return;
-            }
-        }
-
-        revert("Could not set random at most value");
     }
 
     receive() external payable {}
