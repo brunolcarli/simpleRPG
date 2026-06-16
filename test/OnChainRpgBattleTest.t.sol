@@ -156,9 +156,9 @@ contract OnChainRpgBattleTest is Test {
     function testGetRangerLvUpBonus() public view {
         uint8[4] memory bonus = rpg.getLvUpBonus(3);
 
-        assertEq(bonus[0], 10);
+        assertEq(bonus[0], 16);
         assertEq(bonus[1], 8);
-        assertEq(bonus[2], 3);
+        assertEq(bonus[2], 5);
         assertEq(bonus[3], 2);
     }
 
@@ -483,7 +483,7 @@ contract OnChainRpgBattleTest is Test {
         (,,,, uint256 winnerPoints,) = rpg.guilds(1);
         (,,,, uint256 loserPoints,) = rpg.guilds(2);
 
-        assertEq(winnerPoints, 10);
+        assertEq(winnerPoints, 1);
         assertEq(loserPoints, 0);
     }
 
@@ -506,7 +506,7 @@ contract OnChainRpgBattleTest is Test {
 
         assertEq(topGuilds[0].id, 1);
         assertEq(topGuilds[0].name, "Mage Guild");
-        assertEq(topGuilds[0].points, 10);
+        assertEq(topGuilds[0].points, 1);
     }
 
     function testClaimAchievementRevertsIfPlayerIsNotRegistered() public {

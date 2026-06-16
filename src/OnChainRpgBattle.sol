@@ -61,6 +61,8 @@ contract OnChainRpgBattle is ERC721 {
     uint256 public constant CREATE_GUILD_PRICE = 0.01 ether;
     uint256 public constant PLAYER_SLAYER = 100;
     uint256 public constant PLAYER_SLAYER_REQUIRED_KILLS = 100;
+    uint256 public constant MAX_PVP_LEVEL_DIFFERENCE = 10;
+    uint256 public constant MAX_GUILD_POINTS_PER_KILL = 20;
 
     //////////////////////////////
     // STATE VARIABLES
@@ -154,8 +156,8 @@ contract OnChainRpgBattle is ERC721 {
         enemies[4] = Enemy(4, "Zombie", 250, 25, 15, 0, true, 125, 0.0004 ether);
         enemies[5] = Enemy(5, "Werewolf", 300, 30, 20, 0, true, 150, 0.0005 ether);
         enemies[6] = Enemy(6, "Dark Elf", 250, 20, 25, 40, true, 150, 0.0006 ether);
-        enemies[7] = Enemy(7, "Great Lizard", 80, 50, 50, 50, true, 500, 0.0007 ether);
-        enemies[8] = Enemy(8, "Troll", 1000, 120, 100, 45, true, 600, 0.008 ether);
+        enemies[7] = Enemy(7, "Great Lizard", 580, 50, 50, 50, true, 500, 0.0007 ether);
+        enemies[8] = Enemy(8, "Troll", 1000, 120, 100, 45, true, 600, 0.0008 ether);
         enemies[9] = Enemy(9, "Dark Fairy", 1200, 80, 150, 150, true, 750, 0.0009 ether);
         enemies[10] = Enemy(10, "Dragon", 2200, 200, 200, 200, true, 860, 0.001 ether);
 
@@ -207,7 +209,7 @@ contract OnChainRpgBattle is ERC721 {
         } else if (_class == 2) {
             bonus = [15, 5, 3, 20];
         } else {
-            bonus = [10, 8, 3, 2];
+            bonus = [16, 8, 5, 2];
         }
 
         return bonus;
@@ -221,7 +223,7 @@ contract OnChainRpgBattle is ERC721 {
             uint8[4] memory bonus = getLvUpBonus(players[msg.sender].classId);
 
             players[msg.sender].lv += 1;
-            players[msg.sender].exp = _exp;
+            // players[msg.sender].exp = _exp;
             players[msg.sender].nextLv += (players[msg.sender].nextLv * 2) + players[msg.sender].lv;
 
             players[msg.sender].maxHp = players[msg.sender].maxHp + bonus[0];
@@ -423,6 +425,16 @@ contract OnChainRpgBattle is ERC721 {
         // number of battle rounds must be greater than zero
         require(_battleRounds > 0, "Battle must have at least 1 round");
 
+        // PvP "noob protection"
+        uint256 attackerLevel = players[msg.sender].lv;
+        uint256 defenderLevel = players[_targetPlayer].lv;
+
+        uint256 levelDifference = attackerLevel > defenderLevel
+            ? attackerLevel - defenderLevel
+            : defenderLevel - attackerLevel;
+
+        require(levelDifference <= MAX_PVP_LEVEL_DIFFERENCE, "Level difference too high");
+
         // Calculate and require payment based on number of battle rounds
         uint256 battlePrice = COMMON_PRICE * _battleRounds;
         require(msg.value >= battlePrice, "Not enough ETH for this battle");
@@ -493,7 +505,7 @@ contract OnChainRpgBattle is ERC721 {
                     uint8[4] memory bonus = getLvUpBonus(players[_targetPlayer].classId);
 
                     players[_targetPlayer].lv += 1;
-                    players[_targetPlayer].exp = _exp;
+                    // players[_targetPlayer].exp = _exp;
                     players[_targetPlayer].nextLv += (players[_targetPlayer].nextLv * 2) + players[_targetPlayer].lv;
 
                     players[_targetPlayer].maxHp = players[_targetPlayer].maxHp + bonus[0];
@@ -505,7 +517,7 @@ contract OnChainRpgBattle is ERC721 {
                 }
                 if (lvUp == true) {
                     players[_targetPlayer].currentHp = players[_targetPlayer].maxHp;
-                    emit battleLog(round, "Target pokayer LEVEL UP to ", players[_targetPlayer].lv);
+                    emit battleLog(round, "Target player LEVEL UP to ", players[_targetPlayer].lv);
                 }
                 emit battleLog(round, "You died in battle", 0);
                 break;
@@ -687,6 +699,27 @@ contract OnChainRpgBattle is ERC721 {
     // HELPERS
     ///////////////////////////////////////////
 
+    function _calculateGuildPoints(address _winner, address _loser) internal view returns (uint256) {
+        uint256 winnerLevel = players[_winner].lv;
+        uint256 loserLevel = players[_loser].lv;
+
+        uint256 points = loserLevel / 5;
+
+        if (points < 1) {
+            points = 1;
+        }
+
+        if (loserLevel > winnerLevel) {
+            points += (loserLevel - winnerLevel) / 2;
+        }
+
+        if (points > MAX_GUILD_POINTS_PER_KILL) {
+            points = MAX_GUILD_POINTS_PER_KILL;
+        }
+
+        return points;
+    }
+
     function _updateTopGuilds(uint256 _guildId) internal {
         if (_guildId == 0 || guilds[_guildId].exists == false) {
             return;
@@ -755,10 +788,17 @@ contract OnChainRpgBattle is ERC721 {
             return;
         }
 
-        guilds[winnerGuildId].points += 10;
+        uint256 pointsToAward = _calculateGuildPoints(_winner, _loser);
+        guilds[winnerGuildId].points += pointsToAward;
 
-        if (guilds[loserGuildId].points >= 5) {
-            guilds[loserGuildId].points -= 5;
+        uint256 pointsToRemove = pointsToAward / 2;
+
+        if (pointsToRemove < 1) {
+            pointsToRemove = 1;
+        }
+
+        if (guilds[loserGuildId].points >= pointsToRemove) {
+            guilds[loserGuildId].points -= pointsToRemove;
         } else {
             guilds[loserGuildId].points = 0;
         }
