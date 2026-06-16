@@ -429,9 +429,8 @@ contract OnChainRpgBattle is ERC721 {
         uint256 attackerLevel = players[msg.sender].lv;
         uint256 defenderLevel = players[_targetPlayer].lv;
 
-        uint256 levelDifference = attackerLevel > defenderLevel
-            ? attackerLevel - defenderLevel
-            : defenderLevel - attackerLevel;
+        uint256 levelDifference =
+            attackerLevel > defenderLevel ? attackerLevel - defenderLevel : defenderLevel - attackerLevel;
 
         require(levelDifference <= MAX_PVP_LEVEL_DIFFERENCE, "Level difference too high");
 
